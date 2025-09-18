@@ -151,22 +151,35 @@ public class FoBill {
     
     // Utility methods
     public void calculateBalanceAmount() {
-        // New calculation: Balance = Rate from reservation - Advances
+        // New calculation: Balance = (Rate from reservation + Additional Transactions) - (Advances + Paid Amount)
         if (this.checkIn != null && this.checkIn.getReservation() != null) {
-            // Get rate from reservation
-            BigDecimal rate = this.checkIn.getReservation().getRate() != null ? 
+            // Get rate from reservation (room charges)
+            BigDecimal roomCharges = this.checkIn.getReservation().getRate() != null ? 
                 this.checkIn.getReservation().getRate() : BigDecimal.ZERO;
-            // Get advances
+            
+            // Get total transactions (additional charges like food, services)
+            BigDecimal additionalCharges = this.totalAmount != null ? this.totalAmount : BigDecimal.ZERO;
+            
+            // Calculate total billable amount (room charges + additional charges)
+            BigDecimal totalBillable = roomCharges.add(additionalCharges);
+            
+            // Get total advances (both pre and post check-in)
             BigDecimal advances = this.advanceAmount != null ? this.advanceAmount : BigDecimal.ZERO;
-            // Calculate balance
-            BigDecimal calculatedBalance = rate.subtract(advances);
+            
+            // Get paid amount
+            BigDecimal paid = this.paidAmount != null ? this.paidAmount : BigDecimal.ZERO;
+            
+            // Calculate balance: Total billable - (Advances + Paid Amount)
+            BigDecimal calculatedBalance = totalBillable.subtract(advances.add(paid));
+            
             // Ensure balance never goes below zero
             this.balanceAmount = calculatedBalance.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : calculatedBalance;
         } else {
             // Fallback to original calculation if reservation data is not available
             BigDecimal total = totalAmount != null ? totalAmount : BigDecimal.ZERO;
             BigDecimal paid = paidAmount != null ? paidAmount : BigDecimal.ZERO;
-            BigDecimal calculatedBalance = total.subtract(paid);
+            BigDecimal advances = advanceAmount != null ? advanceAmount : BigDecimal.ZERO;
+            BigDecimal calculatedBalance = total.subtract(advances.add(paid));
             // Ensure balance never goes below zero
             this.balanceAmount = calculatedBalance.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : calculatedBalance;
         }

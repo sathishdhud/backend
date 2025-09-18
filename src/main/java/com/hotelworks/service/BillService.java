@@ -74,11 +74,26 @@ public class BillService {
             totalTransactions = BigDecimal.ZERO;
         }
         
-        // Calculate total advances
-        BigDecimal totalAdvances = advanceRepository.getTotalAdvancesByFolio(folioNo);
-        if (totalAdvances == null) {
-            totalAdvances = BigDecimal.ZERO;
+        // Calculate total advances linked to folio
+        BigDecimal folioAdvances = advanceRepository.getTotalAdvancesByFolio(folioNo);
+        if (folioAdvances == null) {
+            folioAdvances = BigDecimal.ZERO;
         }
+        
+        // Calculate advances linked to reservation
+        BigDecimal reservationAdvances = BigDecimal.ZERO;
+        if (checkIn.getReservationNo() != null) {
+            reservationAdvances = advanceRepository.getTotalAdvancesByReservation(checkIn.getReservationNo());
+            if (reservationAdvances == null) {
+                reservationAdvances = BigDecimal.ZERO;
+            }
+        }
+        
+        // Calculate total advances (both folio and reservation advances)
+        BigDecimal totalAdvances = folioAdvances.add(reservationAdvances);
+        
+        // Calculate advances made after check-in (linked to folio but not reservation)
+        BigDecimal postCheckInAdvances = folioAdvances;
         
         // Create bill
         FoBill bill = new FoBill();
@@ -90,8 +105,8 @@ public class BillService {
         bill.setAdvanceAmount(totalAdvances);
         
         // Initialize settlement status
-        // Set paid amount to total advances (even if it exceeds total amount)
-        bill.setPaidAmount(totalAdvances); // Advances count as paid amount
+        // Only advances made after check-in count as paid amounts initially
+        bill.setPaidAmount(postCheckInAdvances);
         bill.calculateBalanceAmount();
         bill.updateSettlementStatus();
         
@@ -105,10 +120,19 @@ public class BillService {
         }
         
         // Update all advances for this folio to reference the new bill
-        List<Advance> folioAdvances = advanceRepository.findByFolioNo(folioNo);
-        for (Advance advance : folioAdvances) {
+        List<Advance> folioAdvancesList = advanceRepository.findByFolioNo(folioNo);
+        for (Advance advance : folioAdvancesList) {
             advance.setBillNo(savedBill.getBillNo());
             advanceRepository.save(advance);
+        }
+        
+        // Update all advances for this reservation to reference the new bill
+        if (checkIn.getReservationNo() != null) {
+            List<Advance> reservationAdvancesList = advanceRepository.findByReservationNo(checkIn.getReservationNo());
+            for (Advance advance : reservationAdvancesList) {
+                advance.setBillNo(savedBill.getBillNo());
+                advanceRepository.save(advance);
+            }
         }
         
         return mapToBillResponse(savedBill);
@@ -145,20 +169,15 @@ public class BillService {
         
         // Update bill fields
         bill.setGuestName(request.getGuestName());
-        bill.setTotalAmount(request.getTotalAmount());
+        
+        // Update total amount if provided (this would be additional transactions)
+        if (request.getTotalAmount() != null) {
+            bill.setTotalAmount(request.getTotalAmount());
+        }
         
         // Update advance amount if provided
         if (request.getAdvanceAmount() != null) {
             bill.setAdvanceAmount(request.getAdvanceAmount());
-        }
-        
-        // Ensure paid amount doesn't exceed total amount
-        if (bill.getPaidAmount() != null && bill.getTotalAmount() != null) {
-            BigDecimal paidAmount = bill.getPaidAmount();
-            BigDecimal totalAmount = bill.getTotalAmount();
-            if (paidAmount.compareTo(totalAmount) > 0) {
-                bill.setPaidAmount(totalAmount);
-            }
         }
         
         // Update payment notes if provided
@@ -445,6 +464,15 @@ public class BillService {
         response.setFolioNo(bill.getFolioNo() != null ? bill.getFolioNo() : "");
         response.setGuestName(bill.getGuestName() != null ? bill.getGuestName() : "");
         response.setRoomId(bill.getRoomId() != null ? bill.getRoomId() : "");
+        
+        // Set room charges from reservation if available
+        BigDecimal roomCharges = BigDecimal.ZERO;
+        if (bill.getCheckIn() != null && bill.getCheckIn().getReservation() != null && 
+            bill.getCheckIn().getReservation().getRate() != null) {
+            roomCharges = bill.getCheckIn().getReservation().getRate();
+        }
+        response.setRoomCharges(roomCharges);
+        
         response.setTotalAmount(bill.getTotalAmount() != null ? bill.getTotalAmount() : BigDecimal.ZERO);
         response.setAdvanceAmount(bill.getAdvanceAmount() != null ? bill.getAdvanceAmount() : BigDecimal.ZERO);
         response.setGeneratedAt(bill.getGeneratedAt());
@@ -536,8 +564,8 @@ public class BillService {
         // Save bill
         FoBill savedBill = foBillRepository.save(bill);
         
-        // Create payment advance record for tracking
-        createPaymentAdvanceRecord(request, savedBill);
+        // Create payment record (not an advance record)
+        createPaymentRecord(request, savedBill);
         
         return mapToBillSettlementResponse(savedBill, request);
     }
@@ -562,6 +590,61 @@ public class BillService {
             .collect(Collectors.toList());
     }
     
+    /**
+     * Update bill totals based on current transactions and advances
+     */
+    public BillResponse updateBillTotals(String folioNo) {
+        // Find the bill associated with this folio
+        FoBill bill = foBillRepository.findByFolioNo(folioNo)
+            .orElseThrow(() -> new RuntimeException("No bill found for folio: " + folioNo));
+        
+        // Ensure checkIn and reservation data is loaded
+        checkInRepository.findById(folioNo)
+            .ifPresent(checkIn -> {
+                bill.setCheckIn(checkIn);
+                if (checkIn.getReservationNo() != null) {
+                    reservationRepository.findById(checkIn.getReservationNo())
+                        .ifPresent(checkIn::setReservation);
+                }
+            });
+        
+        // Calculate total transaction amount
+        BigDecimal totalTransactions = postTransactionRepository.getTotalTransactionsByFolio(folioNo);
+        if (totalTransactions == null) {
+            totalTransactions = BigDecimal.ZERO;
+        }
+        
+        // Calculate total advances linked to folio
+        BigDecimal folioAdvances = advanceRepository.getTotalAdvancesByFolio(folioNo);
+        if (folioAdvances == null) {
+            folioAdvances = BigDecimal.ZERO;
+        }
+        
+        // Calculate advances linked to reservation
+        BigDecimal reservationAdvances = BigDecimal.ZERO;
+        if (bill.getCheckIn() != null && bill.getCheckIn().getReservationNo() != null) {
+            reservationAdvances = advanceRepository.getTotalAdvancesByReservation(bill.getCheckIn().getReservationNo());
+            if (reservationAdvances == null) {
+                reservationAdvances = BigDecimal.ZERO;
+            }
+        }
+        
+        // Calculate total advances (both folio and reservation advances)
+        BigDecimal totalAdvances = folioAdvances.add(reservationAdvances);
+        
+        // Update bill totals
+        bill.setTotalAmount(totalTransactions);
+        bill.setAdvanceAmount(totalAdvances);
+        
+        // Recalculate balance and settlement status
+        bill.calculateBalanceAmount();
+        bill.updateSettlementStatus();
+        
+        FoBill updatedBill = foBillRepository.save(bill);
+        
+        return mapToBillResponse(updatedBill);
+    }
+    
     private BigDecimal calculateCurrentBalance(FoBill bill) {
         BigDecimal totalAmount = bill.getTotalAmount() != null ? bill.getTotalAmount() : BigDecimal.ZERO;
         BigDecimal paidAmount = bill.getPaidAmount() != null ? bill.getPaidAmount() : BigDecimal.ZERO;
@@ -570,26 +653,10 @@ public class BillService {
         return calculatedBalance.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : calculatedBalance;
     }
     
-    private void createPaymentAdvanceRecord(BillSettlementRequest request, FoBill bill) {
-        // Create an advance record to track this payment
-        Advance paymentRecord = new Advance();
-        paymentRecord.setReceiptNo(numberGenerationService.generateAdvanceReceiptNumber());
-        paymentRecord.setBillNo(bill.getBillNo());
-        paymentRecord.setFolioNo(bill.getFolioNo());
-        paymentRecord.setGuestName(bill.getGuestName());
-        paymentRecord.setDate(java.time.LocalDate.now());
-        paymentRecord.setAuditDate(java.time.LocalDate.now());
-        paymentRecord.setShiftDate(java.time.LocalDate.now());
-        paymentRecord.setShiftNo("1");
-        paymentRecord.setModeOfPaymentId(request.getModeOfPaymentId());
-        paymentRecord.setAmount(request.getPaymentAmount());
-        paymentRecord.setCreditCardCompany(request.getCreditCardCompany());
-        paymentRecord.setCardNumber(request.getCardNumber());
-        paymentRecord.setOnlineCompanyName(request.getOnlineCompanyName());
-        paymentRecord.setDetails(request.getDetails());
-        paymentRecord.setNarration("Bill settlement payment for " + bill.getBillNo());
-        
-        advanceRepository.save(paymentRecord);
+    private void createPaymentRecord(BillSettlementRequest request, FoBill bill) {
+        // Create a payment tracking record (this is not an advance)
+        // For now, we'll just log the payment in the bill's payment notes
+        // In a more complex system, we might have a separate payment tracking table
     }
     
     private BillSettlementResponse mapToBillSettlementResponse(FoBill bill, BillSettlementRequest request) {

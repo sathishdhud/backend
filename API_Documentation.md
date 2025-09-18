@@ -270,6 +270,7 @@ DELETE /api/room-types/{typeId}          # Delete room type
 #### Advance Payments (`/api/advances`)
 ```http
 POST   /api/advances/reservation         # Advance for reservation
+POST   /api/advances/reservation/{reservationNo} # Advance for reservation by reservation number in path
 POST   /api/advances/inhouse             # Advance for in-house
 POST   /api/advances/checkout            # Advance for checkout
 GET    /api/advances/reservation/{reservationNo} # Get by reservation
@@ -1014,6 +1015,20 @@ GET /api/rooms/{roomId}/availability?arrivalDate=2025-09-20&departureDate=2025-0
 
 ### 5. Advances (`/api/advances`)
 
+**Create Advance for Reservation by Reservation Number**
+```http
+POST /api/advances/reservation/RES001
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "guestName": "John Doe",
+  "modeOfPaymentId": "CASH",
+  "amount": 5000.00,
+  "narration": "Advance payment for reservation"
+}
+```
+
 **Create Advance for Reservation:**
 ```http
 POST /api/advances/reservation
@@ -1563,6 +1578,25 @@ GET /api/advances/folio/{folioNo}/total
   "message": "Operation successful",
   "data": 1500.00,
   "timestamp": "2025-09-14T11:30:00"
+}
+
+```
+
+### Create Advance for Reservation with Bill
+```http
+POST /api/advances/reservation/RES001/bill/B001
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "guestName": "John Doe",
+  "modeOfPaymentId": "CREDIT_CARD",
+  "amount": 2000.00,
+  "creditCardCompany": "Visa",
+  "cardNumber": "**** **** **** 1234",
+  "narration": "Additional advance payment for reservation with bill"
+}
+```
 }
 ```
 

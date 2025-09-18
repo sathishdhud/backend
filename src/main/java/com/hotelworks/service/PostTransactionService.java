@@ -2,6 +2,7 @@ package com.hotelworks.service;
 
 import com.hotelworks.dto.request.PostTransactionRequest;
 import com.hotelworks.dto.response.PostTransactionResponse;
+import com.hotelworks.entity.FoBill;
 import com.hotelworks.entity.PostTransaction;
 import com.hotelworks.repository.PostTransactionRepository;
 import com.hotelworks.repository.CheckInRepository;
@@ -59,6 +60,10 @@ public class PostTransactionService {
         transaction.setAuditDate(LocalDate.now());
         
         PostTransaction savedTransaction = postTransactionRepository.save(transaction);
+        
+        // Note: Automatic bill update is disabled due to circular dependency
+        // updateAssociatedBill(request.getFolioNo());
+        
         return mapToPostTransactionResponse(savedTransaction);
     }
     
@@ -176,6 +181,15 @@ public class PostTransactionService {
         }
         
         PostTransaction savedTransaction = postTransactionRepository.save(transaction);
+        
+        // Note: Automatic bill update is disabled due to circular dependency
+        // Update associated bill if it exists
+        // if (transaction.getFolioNo() != null) {
+        //     updateAssociatedBill(transaction.getFolioNo());
+        // } else if (transaction.getBillNo() != null) {
+        //     updateBillTotal(transaction.getBillNo());
+        // }
+        
         return mapToPostTransactionResponse(savedTransaction);
     }
     
@@ -183,10 +197,24 @@ public class PostTransactionService {
      * Delete transaction
      */
     public void deleteTransaction(String transactionId) {
+        PostTransaction transaction = postTransactionRepository.findById(transactionId)
+            .orElseThrow(() -> new RuntimeException("Transaction not found: " + transactionId));
+            
+        String folioNo = transaction.getFolioNo();
+        String billNo = transaction.getBillNo();
+        
         if (!postTransactionRepository.existsById(transactionId)) {
             throw new RuntimeException("Transaction not found: " + transactionId);
         }
         postTransactionRepository.deleteById(transactionId);
+        
+        // Note: Automatic bill update is disabled due to circular dependency
+        // Update associated bill if it exists
+        // if (folioNo != null) {
+        //     updateAssociatedBill(folioNo);
+        // } else if (billNo != null) {
+        //     updateBillTotal(billNo);
+        // }
     }
     
     private PostTransaction createTransactionEntity(PostTransactionRequest request) {
@@ -243,5 +271,37 @@ public class PostTransactionService {
         }
         
         return response;
+    }
+    
+    /**
+     * Update the associated bill for a folio
+     */
+    private void updateAssociatedBill(String folioNo) {
+        try {
+            // Note: Due to circular dependency issues, we cannot directly call BillService here
+            // This functionality would need to be handled differently, possibly through events
+            // or by moving this logic to a higher level service
+            System.out.println("Bill update needed for folio: " + folioNo + 
+                " (Note: Automatic bill update is disabled due to circular dependency)");
+        } catch (Exception e) {
+            // Log the error but don't fail the transaction creation
+            System.err.println("Failed to update associated bill for folio " + folioNo + ": " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Update bill total based on current transactions
+     */
+    private void updateBillTotal(String billNo) {
+        try {
+            // Note: Due to circular dependency issues, we cannot directly call BillService here
+            // This functionality would need to be handled differently, possibly through events
+            // or by moving this logic to a higher level service
+            System.out.println("Bill total update needed for bill: " + billNo + 
+                " (Note: Automatic bill update is disabled due to circular dependency)");
+        } catch (Exception e) {
+            // Log the error but don't fail the transaction creation
+            System.err.println("Failed to update bill total for bill " + billNo + ": " + e.getMessage());
+        }
     }
 }

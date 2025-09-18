@@ -1,3 +1,8 @@
-D:\hotelworks\src\test\java\com\hotelworks\service\BillServiceTest.java
-D:\hotelworks\src\test\java\com\hotelworks\entity\FoBillBalanceTest.java
-D:\hotelworks\src\test\java\com\hotelworks\entity\FoBillTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\BillGenerationFlowTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\BillServiceTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\BillServiceAdvanceTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\entity\FoBillAdvanceTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\BillRoomChargesTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\entity\FoBillTransactionTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\entity\FoBillBalanceTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\entity\FoBillTest.java

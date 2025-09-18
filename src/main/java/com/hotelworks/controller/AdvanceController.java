@@ -278,4 +278,24 @@ public class AdvanceController {
                 .body(ApiResponse.error("Failed to create advance: " + e.getMessage()));
         }
     }
+    
+    // Endpoint for creating advance by reservation number in the path
+    // This replaces the existing endpoint with a more RESTful approach
+    @PostMapping("/reservation/{reservationNo}")
+    @Operation(summary = "Create advance for reservation by reservation number", description = "Create advance payment for a reservation by specifying reservation number in the URL path")
+    public ResponseEntity<ApiResponse<AdvanceResponse>> createAdvanceForReservationByPath(
+            @Parameter(description = "Reservation number") @PathVariable String reservationNo,
+            @Valid @RequestBody AdvanceRequest request) {
+        try {
+            // Set the reservation number in the request from the path variable
+            request.setReservationNo(reservationNo);
+            
+            AdvanceResponse response = advanceService.createAdvanceForReservation(request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Advance created successfully for reservation", response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Failed to create advance: " + e.getMessage()));
+        }
+    }
 }

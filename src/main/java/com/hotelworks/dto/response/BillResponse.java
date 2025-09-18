@@ -11,7 +11,9 @@ public class BillResponse {
     private String guestName;
     private String roomId;
     private String roomNo;
-    // Total amount from all transactions
+    // Room charges from reservation
+    private BigDecimal roomCharges;
+    // Total amount from all transactions (food, services, etc.)
     private BigDecimal totalTransactionAmount;
     // Total bill amount (might be different from transaction amount in some cases)
     private BigDecimal totalAmount;
@@ -51,6 +53,13 @@ public class BillResponse {
     
     public String getRoomNo() { return roomNo; }
     public void setRoomNo(String roomNo) { this.roomNo = roomNo; }
+    
+    /**
+     * Get room charges from reservation
+     * @return Room charges
+     */
+    public BigDecimal getRoomCharges() { return roomCharges; }
+    public void setRoomCharges(BigDecimal roomCharges) { this.roomCharges = roomCharges; }
     
     /**
      * Get total transaction amount (sum of all transactions for this bill)
