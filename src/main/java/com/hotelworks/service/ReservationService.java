@@ -1,9 +1,12 @@
 package com.hotelworks.service;
 
 import com.hotelworks.dto.request.ReservationRequest;
+import com.hotelworks.dto.response.DeletedReservationResponse;
 import com.hotelworks.dto.response.ReservationResponse;
+import com.hotelworks.entity.DeletedReservation;
 import com.hotelworks.entity.Reservation;
 import com.hotelworks.entity.Room;
+import com.hotelworks.repository.DeletedReservationRepository;
 import com.hotelworks.repository.ReservationRepository;
 import com.hotelworks.repository.CompanyRepository;
 import com.hotelworks.repository.PlanTypeRepository;
@@ -14,11 +17,14 @@ import com.hotelworks.repository.ArrivalModeRepository;
 import com.hotelworks.repository.NationalityRepository;
 import com.hotelworks.repository.RefModeRepository;
 import com.hotelworks.repository.ResvSourceRepository;
+import com.hotelworks.repository.TaxationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -65,6 +71,12 @@ public class ReservationService {
     @Autowired
     private ResvSourceRepository resvSourceRepository;
     
+    @Autowired
+    private TaxationRepository taxationRepository;
+    
+    @Autowired
+    private DeletedReservationRepository deletedReservationRepository;
+    
     /**
      * Create a new reservation
      */
@@ -93,10 +105,22 @@ public class ReservationService {
         reservation.setNoOfRooms(request.getNoOfRooms());
         reservation.setMobileNumber(request.getMobileNumber());
         reservation.setEmailId(request.getEmailId());
-        reservation.setRate(request.getRate());
+        
+        // Handle GST inclusion - if rate includes GST, update it to include CGST and SGST
+        BigDecimal finalRate = request.getRate();
+        if ("Y".equalsIgnoreCase(request.getIncludingGst())) {
+            finalRate = calculateRateWithTaxes(request.getRate());
+        }
+        reservation.setRate(finalRate);
+        
         reservation.setIncludingGst(request.getIncludingGst());
         reservation.setRemarks(request.getRemarks());
         reservation.setRoomsCheckedIn(0);
+        
+        // Set ID proof fields
+        reservation.setIdProof1(request.getIdProof1());
+        reservation.setIdProof2(request.getIdProof2());
+        reservation.setIdProof3(request.getIdProof3());
         
         // Set additional fields
         reservation.setSettlementTypeId(request.getSettlementTypeId());
@@ -138,9 +162,21 @@ public class ReservationService {
         reservation.setNoOfRooms(request.getNoOfRooms());
         reservation.setMobileNumber(request.getMobileNumber());
         reservation.setEmailId(request.getEmailId());
-        reservation.setRate(request.getRate());
+        
+        // Handle GST inclusion - if rate includes GST, update it to include CGST and SGST
+        BigDecimal finalRate = request.getRate();
+        if ("Y".equalsIgnoreCase(request.getIncludingGst())) {
+            finalRate = calculateRateWithTaxes(request.getRate());
+        }
+        reservation.setRate(finalRate);
+        
         reservation.setIncludingGst(request.getIncludingGst());
         reservation.setRemarks(request.getRemarks());
+        
+        // Update ID proof fields
+        reservation.setIdProof1(request.getIdProof1());
+        reservation.setIdProof2(request.getIdProof2());
+        reservation.setIdProof3(request.getIdProof3());
         
         // Update additional fields
         reservation.setSettlementTypeId(request.getSettlementTypeId());
@@ -331,6 +367,15 @@ public class ReservationService {
         response.setCreatedAt(reservation.getCreatedAt());
         response.setUpdatedAt(reservation.getUpdatedAt());
         
+        // Set soft delete fields
+        response.setDeleted(reservation.isDeleted());
+        response.setDeletedAt(reservation.getDeletedAt());
+        
+        // Set ID proof fields
+        response.setIdProof1(reservation.getIdProof1());
+        response.setIdProof2(reservation.getIdProof2());
+        response.setIdProof3(reservation.getIdProof3());
+        
         // Set additional fields
         response.setSettlementTypeId(reservation.getSettlementTypeId());
         response.setArrivalModeId(reservation.getArrivalModeId());
@@ -397,7 +442,7 @@ public class ReservationService {
     }
     
     /**
-     * Delete reservation by reservation number
+     * Delete reservation by reservation number (move to deleted table)
      */
     public void deleteReservation(String reservationNo) {
         Reservation reservation = reservationRepository.findById(reservationNo)
@@ -408,6 +453,11 @@ public class ReservationService {
             throw new RuntimeException("Cannot delete reservation with checked-in rooms");
         }
         
+        // Move reservation to deleted table
+        DeletedReservation deletedReservation = new DeletedReservation(reservation);
+        deletedReservationRepository.save(deletedReservation);
+        
+        // Remove from active reservations table
         reservationRepository.deleteById(reservationNo);
     }
     
@@ -430,5 +480,104 @@ public class ReservationService {
         reservation.setRoomsCheckedIn(roomsCheckedIn);
         Reservation savedReservation = reservationRepository.save(reservation);
         return mapToReservationResponse(savedReservation);
+    }
+    
+    /**
+     * Get all deleted reservations
+     */
+    public List<DeletedReservationResponse> getDeletedReservations() {
+        List<DeletedReservation> deletedReservations = deletedReservationRepository.findAll();
+        return deletedReservations.stream()
+            .map(DeletedReservationResponse::new)
+            .collect(Collectors.toList());
+    }
+    
+    /**
+     * Restore a deleted reservation
+     */
+    public ReservationResponse restoreReservation(String reservationNo) {
+        DeletedReservation deletedReservation = deletedReservationRepository.findById(reservationNo)
+            .orElseThrow(() -> new RuntimeException("Deleted reservation not found: " + reservationNo));
+        
+        // Create a new reservation from the deleted reservation
+        Reservation reservation = new Reservation();
+        reservation.setReservationNo(deletedReservation.getReservationNo());
+        reservation.setGuestName(deletedReservation.getGuestName());
+        reservation.setCompanyId(deletedReservation.getCompanyId());
+        reservation.setPlanId(deletedReservation.getPlanId());
+        reservation.setRoomTypeId(deletedReservation.getRoomTypeId());
+        reservation.setArrivalDate(deletedReservation.getArrivalDate());
+        reservation.setDepartureDate(deletedReservation.getDepartureDate());
+        reservation.setNoOfDays(deletedReservation.getNoOfDays());
+        reservation.setNoOfPersons(deletedReservation.getNoOfPersons());
+        reservation.setNoOfRooms(deletedReservation.getNoOfRooms());
+        reservation.setMobileNumber(deletedReservation.getMobileNumber());
+        reservation.setEmailId(deletedReservation.getEmailId());
+        reservation.setRate(deletedReservation.getRate());
+        reservation.setIncludingGst(deletedReservation.getIncludingGst());
+        reservation.setRemarks(deletedReservation.getRemarks());
+        reservation.setRoomsCheckedIn(deletedReservation.getRoomsCheckedIn());
+        reservation.setIdProof1(deletedReservation.getIdProof1());
+        reservation.setIdProof2(deletedReservation.getIdProof2());
+        reservation.setIdProof3(deletedReservation.getIdProof3());
+        reservation.setSettlementTypeId(deletedReservation.getSettlementTypeId());
+        reservation.setArrivalModeId(deletedReservation.getArrivalModeId());
+        reservation.setArrivalDetails(deletedReservation.getArrivalDetails());
+        reservation.setNationalityId(deletedReservation.getNationalityId());
+        reservation.setRefModeId(deletedReservation.getRefModeId());
+        reservation.setResvSourceId(deletedReservation.getResvSourceId());
+        reservation.setCreatedAt(deletedReservation.getCreatedAt());
+        reservation.setUpdatedAt(LocalDateTime.now());
+        
+        // Save the restored reservation
+        Reservation savedReservation = reservationRepository.save(reservation);
+        
+        // Remove from deleted table
+        deletedReservationRepository.deleteById(reservationNo);
+        
+        return mapToReservationResponse(savedReservation);
+    }
+    
+    /**
+     * Calculate rate with taxes (CGST + SGST) when rate includes GST
+     * @param baseRate The base rate before taxes
+     * @return The rate including CGST and SGST
+     */
+    private BigDecimal calculateRateWithTaxes(BigDecimal baseRate) {
+        if (baseRate == null || baseRate.compareTo(BigDecimal.ZERO) <= 0) {
+            return baseRate;
+        }
+        
+        try {
+            // Get CGST and SGST rates
+            Optional<com.hotelworks.entity.Taxation> cgstTax = taxationRepository.findByTaxName("CGST");
+            Optional<com.hotelworks.entity.Taxation> sgstTax = taxationRepository.findByTaxName("SGST");
+            
+            BigDecimal cgstRate = BigDecimal.ZERO;
+            BigDecimal sgstRate = BigDecimal.ZERO;
+            
+            if (cgstTax.isPresent() && cgstTax.get().getPercentage() != null) {
+                cgstRate = cgstTax.get().getPercentage();
+            }
+            
+            if (sgstTax.isPresent() && sgstTax.get().getPercentage() != null) {
+                sgstRate = sgstTax.get().getPercentage();
+            }
+            
+            // Calculate total tax rate
+            BigDecimal totalTaxRate = cgstRate.add(sgstRate);
+            
+            // Calculate rate including taxes
+            // If rate already includes GST, we need to add the taxes to make it explicit
+            // Rate with taxes = Base Rate * (1 + Total Tax Rate / 100)
+            BigDecimal taxMultiplier = BigDecimal.valueOf(100).add(totalTaxRate)
+                                        .divide(BigDecimal.valueOf(100), 4, BigDecimal.ROUND_HALF_UP);
+            
+            return baseRate.multiply(taxMultiplier).setScale(2, BigDecimal.ROUND_HALF_UP);
+        } catch (Exception e) {
+            // If there's any error in tax calculation, return the original rate
+            System.err.println("Error calculating rate with taxes: " + e.getMessage());
+            return baseRate;
+        }
     }
 }

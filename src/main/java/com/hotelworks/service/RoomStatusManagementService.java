@@ -1,15 +1,24 @@
 package com.hotelworks.service;
 
 import com.hotelworks.entity.CheckIn;
+import com.hotelworks.entity.HotelAccountHead;
 import com.hotelworks.entity.Room;
+import com.hotelworks.entity.Taxation;
 import com.hotelworks.repository.CheckInRepository;
+import com.hotelworks.repository.HotelAccountHeadRepository;
 import com.hotelworks.repository.RoomRepository;
+import com.hotelworks.repository.TaxationRepository;
+import com.hotelworks.repository.ReservationRepository;
+import com.hotelworks.service.NumberGenerationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.PostConstruct;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service for managing automatic room status updates based on departure dates
@@ -23,6 +32,18 @@ public class RoomStatusManagementService {
     
     @Autowired
     private RoomRepository roomRepository;
+    
+    @Autowired
+    private HotelAccountHeadRepository hotelAccountHeadRepository;
+    
+    @Autowired
+    private TaxationRepository taxationRepository;
+    
+    @Autowired
+    private ReservationRepository reservationRepository;
+    
+    @Autowired
+    private NumberGenerationService numberGenerationService;
     
     /**
      * Process automatic room status updates for departure dates
@@ -149,6 +170,67 @@ public class RoomStatusManagementService {
             roomId, arrivalDate, departureDate);
         
         return overlappingStays.isEmpty();
+    }
+    
+    /**
+     * Initialize required data for audit date processing
+     * This method ensures required account heads and tax records exist
+     */
+    @PostConstruct
+    public void initializeAuditData() {
+        try {
+            // Check and create Room Charges account head if it doesn't exist
+            if (!hotelAccountHeadRepository.existsByName("Room Charges")) {
+                HotelAccountHead roomChargesHead = new HotelAccountHead();
+                roomChargesHead.setAccHeadId("ROOM_CHARGE");
+                roomChargesHead.setName("Room Charges");
+                hotelAccountHeadRepository.save(roomChargesHead);
+                System.out.println("Created Room Charges account head");
+            }
+            
+            // Check and create CGST account head if it doesn't exist
+            if (!hotelAccountHeadRepository.existsByName("CGST")) {
+                HotelAccountHead cgstHead = new HotelAccountHead();
+                cgstHead.setAccHeadId("CGST");
+                cgstHead.setName("CGST");
+                hotelAccountHeadRepository.save(cgstHead);
+                System.out.println("Created CGST account head");
+            }
+            
+            // Check and create SGST account head if it doesn't exist
+            if (!hotelAccountHeadRepository.existsByName("SGST")) {
+                HotelAccountHead sgstHead = new HotelAccountHead();
+                sgstHead.setAccHeadId("SGST");
+                sgstHead.setName("SGST");
+                hotelAccountHeadRepository.save(sgstHead);
+                System.out.println("Created SGST account head");
+            }
+            
+            // Check and create CGST tax record if it doesn't exist
+            if (!taxationRepository.existsByTaxName("CGST")) {
+                Taxation cgstTax = new Taxation();
+                cgstTax.setTaxId("CGST001");
+                cgstTax.setTaxName("CGST");
+                cgstTax.setPercentage(new BigDecimal("9.00")); // 9% CGST
+                taxationRepository.save(cgstTax);
+                System.out.println("Created CGST tax record with 9% rate");
+            }
+            
+            // Check and create SGST tax record if it doesn't exist
+            if (!taxationRepository.existsByTaxName("SGST")) {
+                Taxation sgstTax = new Taxation();
+                sgstTax.setTaxId("SGST001");
+                sgstTax.setTaxName("SGST");
+                sgstTax.setPercentage(new BigDecimal("9.00")); // 9% SGST
+                taxationRepository.save(sgstTax);
+                System.out.println("Created SGST tax record with 9% rate");
+            }
+            
+            System.out.println("Audit data initialization completed");
+        } catch (Exception e) {
+            System.err.println("Error during audit data initialization: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
     
     /**

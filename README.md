@@ -5,14 +5,14 @@ A comprehensive Spring Boot backend application for hotel management operations 
 ## Features
 
 ### Core Operations
-- **Reservations Management**: Create, update, search reservations with multi-room support
+- **Reservations Management**: Create, update, search reservations with multi-room support and automatic GST calculation
 - **Check-in Management**: Process walk-ins and reservation-based check-ins
 - **Advance Payments**: Handle advances for reservations, in-house guests, and checkout guests
 - **Post Transactions**: Manage guest expenses (room service, restaurant, laundry, etc.)
 - **Billing System**: Generate bills, split bills, and manage checkout process
 
 ### Special Operations
-- **Audit Date Change**: Automated posting of room charges and taxes for all in-house guests
+- **Audit Date Change**: Automated daily posting of room charges and taxes for all in-house guests at 1:00 AM
 - **Shift Management**: Track and update shift balances
 - **Room Status Management**: Real-time room status tracking with color-coded display
 - **User Rights Management**: Role-based access control for different user types
@@ -175,8 +175,10 @@ http://localhost:8080/api
 - `DELETE /{userId}` - Delete user
 
 #### 9. Operations (`/api/operations`)
-- `POST /audit-date-change` - Process audit date change
-- `POST /shift-change` - Process shift change
+- `POST /audit-date-change` - Process audit date change manually
+- `POST /shift-change` - Process shift change manually
+- `POST /shift-close` - Close current shift with automatic rotation logic
+- `GET /hmsystem` - Get latest HMS system information
 
 ### Room Status Codes
 - **VR**: Vacant Ready (Green - Available for check-in)
@@ -259,6 +261,7 @@ http://localhost:8080/api
 
 ### System Tables
 - **shift**: Shift management
+- **hmsystem**: Hotel management system configuration (shift date, running shift, total shifts)
 - **hotelsoftusers**: System users
 - **user_type**: User role definitions
 - **user_rights_data**: User permissions
@@ -289,11 +292,18 @@ http://localhost:8080/api
 5. Complete checkout process
 
 ### 5. Audit Date Change Process
-1. User initiates audit date change with confirmation
-2. System finds all in-house guests
-3. Automatically posts room charges for each guest
-4. Calculates and posts CGST (9%) and SGST (9%)
-5. Updates audit date for the system
+1. System automatically finds all in-house guests daily at 1:00 AM
+2. Automatically posts room charges for each guest, properly handling GST-inclusive and exclusive rates
+3. Calculates and posts CGST (9%) and SGST (9%) based on the room rate
+4. Updates audit date for the system
+5. Can also be triggered manually via API endpoint
+
+### 6. Shift Management Process
+1. System maintains current shift date, running shift, and total shifts in HMS system table
+2. When closing a shift, balance is stored in shift table
+3. If not the last shift, running shift is incremented
+4. If last shift, shift date is advanced and running shift is reset to 1
+5. Can be triggered manually via API endpoints
 
 ## Error Handling
 

@@ -2,7 +2,9 @@ package com.hotelworks.controller;
 
 import com.hotelworks.dto.request.AuditDateChangeRequest;
 import com.hotelworks.dto.request.ShiftChangeRequest;
+import com.hotelworks.dto.request.ShiftCloseRequest;
 import com.hotelworks.dto.response.ApiResponse;
+import com.hotelworks.entity.Hmsystem;
 import com.hotelworks.service.OperationsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,6 +49,35 @@ public class OperationsController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Failed to process shift change: " + e.getMessage()));
+        }
+    }
+    
+    @PostMapping("/shift-close")
+    @Operation(summary = "Close current shift", 
+               description = "Close current shift and handle shift rotation logic")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<String>> closeShift(
+            @Valid @RequestBody ShiftCloseRequest request) {
+        try {
+            String result = operationsService.processShiftClose(request);
+            return ResponseEntity.ok(ApiResponse.success(result));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Failed to close shift: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/hmsystem")
+    @Operation(summary = "Get latest HMS system information", 
+               description = "Get the latest HMS system information including shift date, running shift, and total shifts")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Hmsystem>> getLatestHmsystemInfo() {
+        try {
+            Hmsystem hmsystem = operationsService.getLatestHmsystemInfo();
+            return ResponseEntity.ok(ApiResponse.success(hmsystem));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Failed to retrieve HMS system information: " + e.getMessage()));
         }
     }
 }

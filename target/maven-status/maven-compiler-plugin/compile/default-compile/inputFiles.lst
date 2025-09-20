@@ -13,6 +13,7 @@ D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\repository\PostT
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\enums\PermissionType.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\response\SplitBillPreviewResponse.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\response\UserResponse.java
+D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\repository\DeletedReservationRepository.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\request\PaymentModeRequest.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\repository\FoBillRepository.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\request\UserTypeRequest.java
@@ -46,6 +47,7 @@ D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\request\Rese
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\request\TaxationRequest.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\response\BillResponse.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\config\SecurityConfig.java
+D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\request\RoomShiftRequest.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\entity\Nationality.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\entity\HotelAccountHead.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\entity\RefMode.java
@@ -71,6 +73,7 @@ D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\response\Nat
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\enums\UserRole.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\service\CompanyService.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\entity\PlanType.java
+D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\entity\Hmsystem.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\repository\RoomRepository.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\entity\Room.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\request\SplitBillRequest.java
@@ -80,15 +83,18 @@ D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\repository\UserR
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\service\RoomService.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\service\ReservationService.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\repository\AdvanceRepository.java
+D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\request\ShiftCloseRequest.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\controller\RoomController.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\entity\BillSettlementType.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\controller\UserManagementController.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\response\ResvSourceResponse.java
+D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\service\HmsystemInitializationService.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\controller\AdvanceController.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\entity\PostTransaction.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\service\RoomStatusManagementService.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\request\AccountHeadRequest.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\exception\BusinessException.java
+D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\response\DeletedReservationResponse.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\response\RefModeResponse.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\exception\ResourceNotFoundException.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\enums\ModuleName.java
@@ -118,6 +124,7 @@ D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\response\Che
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\service\AccountHeadService.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\exception\SplitBillValidationException.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\entity\Reservation.java
+D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\entity\DeletedReservation.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\controller\PaymentModeController.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\request\ShiftChangeRequest.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\response\TaxationResponse.java
@@ -141,6 +148,7 @@ D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\service\PostTran
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\exception\DuplicateResourceException.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\entity\CheckIn.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\request\BillSettlementRequest.java
+D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\repository\HmsystemRepository.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\request\AdvanceRequest.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\request\RefModeRequest.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\response\RoomTypeResponse.java

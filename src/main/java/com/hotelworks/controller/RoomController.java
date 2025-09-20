@@ -1,6 +1,7 @@
 package com.hotelworks.controller;
 
 import com.hotelworks.dto.request.RoomRequest;
+import com.hotelworks.dto.request.RoomShiftRequest;
 import com.hotelworks.dto.response.RoomStatusResponse;
 import com.hotelworks.dto.response.ApiResponse;
 import com.hotelworks.service.RoomService;
@@ -174,6 +175,19 @@ public class RoomController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Failed to process room checkout: " + e.getMessage()));
+        }
+    }
+    
+    @PutMapping("/shift")
+    @Operation(summary = "Shift guest from one room to another", description = "Move a guest from their current room to a new room")
+    public ResponseEntity<ApiResponse<String>> shiftGuestToNewRoom(
+            @Valid @RequestBody RoomShiftRequest request) {
+        try {
+            String result = roomService.shiftGuestToNewRoom(request);
+            return ResponseEntity.ok(ApiResponse.success(result));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Failed to shift guest to new room: " + e.getMessage()));
         }
     }
     

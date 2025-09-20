@@ -1,10 +1,11 @@
 package com.hotelworks.controller;
 
 import com.hotelworks.dto.request.ReservationRequest;
-import com.hotelworks.dto.response.ReservationResponse;
 import com.hotelworks.dto.response.ApiResponse;
-import com.hotelworks.service.ReservationService;
+import com.hotelworks.dto.response.DeletedReservationResponse;
+import com.hotelworks.dto.response.ReservationResponse;
 import com.hotelworks.entity.Room;
+import com.hotelworks.service.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -180,6 +181,31 @@ public class ReservationController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("Failed to delete reservation: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/deleted")
+    @Operation(summary = "Get deleted reservations", description = "Retrieves all deleted hotel reservations")
+    public ResponseEntity<ApiResponse<List<DeletedReservationResponse>>> getDeletedReservations() {
+        try {
+            List<DeletedReservationResponse> responses = reservationService.getDeletedReservations();
+            return ResponseEntity.ok(ApiResponse.success(responses));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("Failed to retrieve deleted reservations: " + e.getMessage()));
+        }
+    }
+    
+    @PutMapping("/{reservationNo}/restore")
+    @Operation(summary = "Restore deleted reservation", description = "Restores a deleted reservation")
+    public ResponseEntity<ApiResponse<ReservationResponse>> restoreReservation(
+            @Parameter(description = "Reservation number") @PathVariable String reservationNo) {
+        try {
+            ReservationResponse response = reservationService.restoreReservation(reservationNo);
+            return ResponseEntity.ok(ApiResponse.success("Reservation restored successfully", response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Failed to restore reservation: " + e.getMessage()));
         }
     }
     

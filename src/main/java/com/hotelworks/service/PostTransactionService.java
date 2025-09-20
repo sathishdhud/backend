@@ -9,6 +9,7 @@ import com.hotelworks.repository.CheckInRepository;
 import com.hotelworks.repository.FoBillRepository;
 import com.hotelworks.repository.RoomRepository;
 import com.hotelworks.repository.HotelAccountHeadRepository;
+import com.hotelworks.repository.TaxationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +38,9 @@ public class PostTransactionService {
     
     @Autowired
     private HotelAccountHeadRepository hotelAccountHeadRepository;
+    
+    @Autowired
+    private TaxationRepository taxationRepository;
     
     @Autowired
     private NumberGenerationService numberGenerationService;
@@ -172,7 +177,14 @@ public class PostTransactionService {
         transaction.setGuestName(request.getGuestName());
         transaction.setAccHeadId(request.getAccHeadId());
         transaction.setVoucherNo(request.getVoucherNo());
-        transaction.setAmount(request.getAmount());
+        
+        // Handle GST inclusion - if amount includes GST, update it to include CGST and SGST
+        BigDecimal finalAmount = request.getAmount();
+        if (request.getIncludingGst() != null && "Y".equalsIgnoreCase(request.getIncludingGst())) {
+            finalAmount = calculateAmountWithTaxes(request.getAmount());
+        }
+        transaction.setAmount(finalAmount);
+        
         transaction.setNarration(request.getNarration());
         
         // Update room ID if provided
@@ -224,7 +236,14 @@ public class PostTransactionService {
         transaction.setGuestName(request.getGuestName());
         transaction.setAccHeadId(request.getAccHeadId());
         transaction.setVoucherNo(request.getVoucherNo());
-        transaction.setAmount(request.getAmount());
+        
+        // Handle GST inclusion - if amount includes GST, update it to include CGST and SGST
+        BigDecimal finalAmount = request.getAmount();
+        if (request.getIncludingGst() != null && "Y".equalsIgnoreCase(request.getIncludingGst())) {
+            finalAmount = calculateAmountWithTaxes(request.getAmount());
+        }
+        transaction.setAmount(finalAmount);
+        
         transaction.setNarration(request.getNarration());
         
         return transaction;
@@ -302,6 +321,49 @@ public class PostTransactionService {
         } catch (Exception e) {
             // Log the error but don't fail the transaction creation
             System.err.println("Failed to update bill total for bill " + billNo + ": " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Calculate amount with taxes (CGST + SGST) when amount includes GST
+     * @param baseAmount The base amount before taxes
+     * @return The amount including CGST and SGST
+     */
+    public BigDecimal calculateAmountWithTaxes(BigDecimal baseAmount) {
+        if (baseAmount == null || baseAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return baseAmount;
+        }
+        
+        try {
+            // Get CGST and SGST rates
+            Optional<com.hotelworks.entity.Taxation> cgstTax = taxationRepository.findByTaxName("CGST");
+            Optional<com.hotelworks.entity.Taxation> sgstTax = taxationRepository.findByTaxName("SGST");
+            
+            BigDecimal cgstRate = BigDecimal.ZERO;
+            BigDecimal sgstRate = BigDecimal.ZERO;
+            
+            if (cgstTax.isPresent() && cgstTax.get().getPercentage() != null) {
+                cgstRate = cgstTax.get().getPercentage();
+            }
+            
+            if (sgstTax.isPresent() && sgstTax.get().getPercentage() != null) {
+                sgstRate = sgstTax.get().getPercentage();
+            }
+            
+            // Calculate total tax rate
+            BigDecimal totalTaxRate = cgstRate.add(sgstRate);
+            
+            // Calculate amount including taxes
+            // If amount already includes GST, we need to add the taxes to make it explicit
+            // Amount with taxes = Base Amount * (1 + Total Tax Rate / 100)
+            BigDecimal taxMultiplier = BigDecimal.valueOf(100).add(totalTaxRate)
+                                        .divide(BigDecimal.valueOf(100), 4, BigDecimal.ROUND_HALF_UP);
+            
+            return baseAmount.multiply(taxMultiplier).setScale(2, BigDecimal.ROUND_HALF_UP);
+        } catch (Exception e) {
+            // If there's any error in tax calculation, return the original amount
+            System.err.println("Error calculating amount with taxes: " + e.getMessage());
+            return baseAmount;
         }
     }
 }

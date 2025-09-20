@@ -28,6 +28,15 @@ public class ReservationResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
+    // Soft delete fields
+    private boolean deleted;
+    private LocalDateTime deletedAt;
+    
+    // ID Proof fields
+    private String idProof1;
+    private String idProof2;
+    private String idProof3;
+    
     // Additional fields as per your request
     private String settlementTypeId;
     private String settlementTypeName;
@@ -107,6 +116,23 @@ public class ReservationResponse {
     
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    
+    // Soft delete getters and setters
+    public boolean isDeleted() { return deleted; }
+    public void setDeleted(boolean deleted) { this.deleted = deleted; }
+    
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+    
+    // ID Proof getters and setters
+    public String getIdProof1() { return idProof1; }
+    public void setIdProof1(String idProof1) { this.idProof1 = idProof1; }
+    
+    public String getIdProof2() { return idProof2; }
+    public void setIdProof2(String idProof2) { this.idProof2 = idProof2; }
+    
+    public String getIdProof3() { return idProof3; }
+    public void setIdProof3(String idProof3) { this.idProof3 = idProof3; }
     
     // Additional getters and setters
     public String getSettlementTypeId() { return settlementTypeId; }

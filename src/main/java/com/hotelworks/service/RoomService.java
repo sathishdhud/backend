@@ -1,6 +1,7 @@
 package com.hotelworks.service;
 
 import com.hotelworks.dto.request.RoomRequest;
+import com.hotelworks.dto.request.RoomShiftRequest;
 import com.hotelworks.dto.response.RoomStatusResponse;
 import com.hotelworks.entity.Room;
 import com.hotelworks.entity.CheckIn;
@@ -202,6 +203,51 @@ public class RoomService {
         
         Room savedRoom = roomRepository.save(room);
         return mapToRoomStatusResponse(savedRoom);
+    }
+    
+    /**
+     * Shift guest from current room to a new room
+     */
+    public String shiftGuestToNewRoom(RoomShiftRequest request) {
+        // Validate that both rooms exist
+        Room currentRoom = roomRepository.findById(request.getCurrentRoomId())
+            .orElseThrow(() -> new RuntimeException("Current room not found: " + request.getCurrentRoomId()));
+        
+        Room newRoom = roomRepository.findById(request.getNewRoomId())
+            .orElseThrow(() -> new RuntimeException("New room not found: " + request.getNewRoomId()));
+        
+        // Validate that the current room is occupied
+        if (!"OD".equals(currentRoom.getStatus()) && !"OI".equals(currentRoom.getStatus())) {
+            throw new RuntimeException("Current room is not occupied: " + request.getCurrentRoomId());
+        }
+        
+        // Validate that the new room is available
+        if (!"VR".equals(newRoom.getStatus())) {
+            throw new RuntimeException("New room is not available. Current status: " + newRoom.getStatus() + " (Room: " + request.getNewRoomId() + ")");
+        }
+        
+        // Validate that the check-in exists and is associated with the current room
+        CheckIn checkIn = checkInRepository.findById(request.getFolioNo())
+            .orElseThrow(() -> new RuntimeException("Check-in not found: " + request.getFolioNo()));
+        
+        if (!checkIn.getRoomId().equals(request.getCurrentRoomId())) {
+            throw new RuntimeException("Check-in is not associated with the current room");
+        }
+        
+        // Update the check-in record with the new room ID
+        checkIn.setRoomId(request.getNewRoomId());
+        checkInRepository.save(checkIn);
+        
+        // Update the current room status to Vacant Ready (VR)
+        currentRoom.setStatus("VR");
+        roomRepository.save(currentRoom);
+        
+        // Update the new room status to Occupied Dirty (OD)
+        newRoom.setStatus("OD");
+        roomRepository.save(newRoom);
+        
+        return String.format("Guest successfully shifted from room %s to room %s", 
+            request.getCurrentRoomId(), request.getNewRoomId());
     }
     
     private RoomStatusResponse mapToRoomStatusResponse(Room room) {

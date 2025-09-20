@@ -35,11 +35,10 @@ public interface CheckInRepository extends JpaRepository<CheckIn, String> {
     @Query("SELECT c FROM CheckIn c WHERE c.guestName LIKE %:searchTerm% OR c.folioNo LIKE %:searchTerm% OR c.roomId LIKE %:searchTerm%")
     List<CheckIn> searchCheckIns(@Param("searchTerm") String searchTerm);
     
-    boolean existsByRoomId(String roomId);
-    
-    // Find guests who should have checked out before today but rooms are still occupied
-    @Query("SELECT c FROM CheckIn c WHERE c.departureDate < :currentDate")
+    @Query("SELECT c FROM CheckIn c WHERE c.departureDate < :currentDate AND c.roomId IN (SELECT r.roomId FROM Room r WHERE r.status IN ('OD', 'OI'))")
     List<CheckIn> findOverdueCheckouts(@Param("currentDate") LocalDate currentDate);
+    
+    boolean existsByRoomId(String roomId);
     
     // Find overlapping stays for room availability checking
     @Query("SELECT c FROM CheckIn c WHERE c.roomId = :roomId AND " +

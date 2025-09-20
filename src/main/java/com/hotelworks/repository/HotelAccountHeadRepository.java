@@ -12,4 +12,6 @@ public interface HotelAccountHeadRepository extends JpaRepository<HotelAccountHe
     Optional<HotelAccountHead> findByName(String name);
     
     boolean existsByName(String name);
+    
+    boolean existsByAccHeadId(String accHeadId);
 }

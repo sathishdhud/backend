@@ -26,6 +26,8 @@ public class PostTransactionRequest {
     
     private String narration;
     
+    private String includingGst; // Y/N for GST inclusion
+    
     // Constructors
     public PostTransactionRequest() {}
     
@@ -56,4 +58,7 @@ public class PostTransactionRequest {
     
     public String getNarration() { return narration; }
     public void setNarration(String narration) { this.narration = narration; }
+    
+    public String getIncludingGst() { return includingGst; }
+    public void setIncludingGst(String includingGst) { this.includingGst = includingGst; }
 }

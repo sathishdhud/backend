@@ -4171,6 +4171,76 @@ POST   /api/operations/shift-change
 - Update existing shifts or create new records
 - Maintain audit trail of shift handovers
 
+#### **Shift Close Management**
+Advanced shift closing with automatic rotation logic:
+
+```http
+POST   /api/operations/shift-close
+```
+
+**Features:**
+- Close current shift and store balance in shift table
+- Automatically increment running shift number
+- When reaching total shift count, advance shift date and reset running shift to 1
+- Automatically trigger audit date change when shift date advances
+- Maintain HMS system configuration
+
+**Close Shift Request:**
+```json
+{
+  "balance": 15000.00
+}
+```
+
+**Close Shift Response (Normal Shift):**
+```json
+{
+  "success": true,
+  "message": "Shift 1 closed successfully. Running shift incremented to 2. Balance stored in shift table.",
+  "data": null,
+  "timestamp": "2025-09-20T10:30:00"
+}
+```
+
+**Close Shift Response (Last Shift):**
+```json
+{
+  "success": true,
+  "message": "Shift 3 closed successfully. Date changed to 2025-09-21 and running shift reset to 1. Audit date also updated. Balance stored in shift table.",
+  "data": null,
+  "timestamp": "2025-09-20T10:30:00"
+}
+```
+
+#### **HMS System Information**
+Retrieve the latest HMS system configuration:
+
+```http
+GET   /api/operations/hmsystem
+```
+
+**Features:**
+- Get current shift date, running shift, and total shifts
+- Real-time HMS system status
+- Administrative system information
+
+**HMS System Response:**
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": {
+    "id": 1,
+    "shiftDate": "2025-09-20",
+    "runningShift": 2,
+    "totalShift": 3,
+    "createdAt": "2025-09-15T10:30:00",
+    "updatedAt": "2025-09-20T10:30:00"
+  },
+  "timestamp": "2025-09-20T10:30:00"
+}
+```
+
 ### **Admin Dashboard & Management**
 
 #### **Administrative Endpoints**
@@ -4278,7 +4348,7 @@ POST/GET/PUT/DELETE /api/reservation-sources
 ## 📋 Quick Reference
 
 ### **Essential Endpoints**
-```http
+```
 # Authentication
 POST   /api/auth/login                      # JWT Login (Recommended)
 POST   /api/auth/logout                     # JWT Logout
@@ -4293,8 +4363,6 @@ POST   /api/bills/generate/{folioNo}        # Generate bill
 GET    /api/rooms                           # Get all rooms with status
 PUT    /api/rooms/{roomId}/status/{status}  # Update room status
 
-
-
 # Financial Operations
 POST   /api/advances/inhouse                # Process advance payment
 POST   /api/bills/{billNo}/payment          # Process bill payment
@@ -4303,6 +4371,9 @@ GET    /api/bills/pending-settlements       # Get pending payments
 # Administrative
 GET    /api/admin/dashboard                 # Admin dashboard
 POST   /api/operations/audit-date-change    # Audit date change
+POST   /api/operations/shift-change         # Manual shift change
+POST   /api/operations/shift-close          # Close current shift with auto-rotation
+GET    /api/operations/hmsystem             # Get HMS system information
 ```
 
 ### **Role Access Quick Reference**
