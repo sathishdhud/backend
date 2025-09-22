@@ -8,6 +8,14 @@ import com.hotelworks.repository.CheckInRepository;
 import com.hotelworks.repository.RoomRepository;
 import com.hotelworks.repository.ReservationRepository;
 import com.hotelworks.repository.AdvanceRepository;
+import com.hotelworks.repository.ArrivalModeRepository;
+import com.hotelworks.repository.CompanyRepository;
+import com.hotelworks.repository.PlanTypeRepository;
+import com.hotelworks.repository.RoomTypeRepository;
+import com.hotelworks.repository.BillSettlementTypeRepository;
+import com.hotelworks.repository.NationalityRepository;
+import com.hotelworks.repository.RefModeRepository;
+import com.hotelworks.repository.ResvSourceRepository;
 import com.hotelworks.entity.Reservation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,6 +41,30 @@ public class CheckInService {
     
     @Autowired
     private AdvanceRepository advanceRepository;
+    
+    @Autowired
+    private ArrivalModeRepository arrivalModeRepository;
+    
+    @Autowired
+    private CompanyRepository companyRepository;
+    
+    @Autowired
+    private PlanTypeRepository planTypeRepository;
+    
+    @Autowired
+    private RoomTypeRepository roomTypeRepository;
+    
+    @Autowired
+    private BillSettlementTypeRepository settlementTypeRepository;
+    
+    @Autowired
+    private NationalityRepository nationalityRepository;
+    
+    @Autowired
+    private RefModeRepository refModeRepository;
+    
+    @Autowired
+    private ResvSourceRepository resvSourceRepository;
     
     @Autowired
     private ReservationService reservationService;
@@ -72,15 +104,44 @@ public class CheckInService {
         checkIn.setIdProof3(request.getIdProof3());
         
         // Set additional fields
-        checkIn.setCompanyId(request.getCompanyId());
-        checkIn.setPlanId(request.getPlanId());
-        checkIn.setRoomTypeId(request.getRoomTypeId());
-        checkIn.setSettlementTypeId(request.getSettlementTypeId());
-        checkIn.setArrivalModeId(request.getArrivalModeId());
-        checkIn.setArrivalDetails(request.getArrivalDetails());
-        checkIn.setNationalityId(request.getNationalityId());
-        checkIn.setRefModeId(request.getRefModeId());
-        checkIn.setResvSourceId(request.getResvSourceId());
+        if (request.getCompanyId() != null && !request.getCompanyId().trim().isEmpty()) {
+            checkIn.setCompanyId(request.getCompanyId());
+        }
+        
+        if (request.getPlanId() != null && !request.getPlanId().trim().isEmpty()) {
+            checkIn.setPlanId(request.getPlanId());
+        }
+        
+        if (request.getRoomTypeId() != null && !request.getRoomTypeId().trim().isEmpty()) {
+            checkIn.setRoomTypeId(request.getRoomTypeId());
+        }
+        
+        if (request.getSettlementTypeId() != null && !request.getSettlementTypeId().trim().isEmpty()) {
+            checkIn.setSettlementTypeId(request.getSettlementTypeId());
+        }
+        
+        if (request.getArrivalModeId() != null && !request.getArrivalModeId().trim().isEmpty()) {
+            checkIn.setArrivalModeId(request.getArrivalModeId());
+        } else if (request.getArrivalModeId() != null && request.getArrivalModeId().trim().isEmpty()) {
+            // If arrivalModeId is explicitly set to empty string, set it to null
+            checkIn.setArrivalModeId(null);
+        }
+        
+        if (request.getArrivalDetails() != null && !request.getArrivalDetails().trim().isEmpty()) {
+            checkIn.setArrivalDetails(request.getArrivalDetails());
+        }
+        
+        if (request.getNationalityId() != null && !request.getNationalityId().trim().isEmpty()) {
+            checkIn.setNationalityId(request.getNationalityId());
+        }
+        
+        if (request.getRefModeId() != null && !request.getRefModeId().trim().isEmpty()) {
+            checkIn.setRefModeId(request.getRefModeId());
+        }
+        
+        if (request.getResvSourceId() != null && !request.getResvSourceId().trim().isEmpty()) {
+            checkIn.setResvSourceId(request.getResvSourceId());
+        }
         
         // Save check-in
         CheckIn savedCheckIn = checkInRepository.save(checkIn);
@@ -217,6 +278,9 @@ public class CheckInService {
         
         if (request.getArrivalModeId() != null) {
             checkIn.setArrivalModeId(request.getArrivalModeId());
+        } else if (request.getArrivalModeId() != null && request.getArrivalModeId().trim().isEmpty()) {
+            // If arrivalModeId is explicitly set to empty string, set it to null
+            checkIn.setArrivalModeId(null);
         }
         
         if (request.getArrivalDetails() != null) {
@@ -275,6 +339,55 @@ public class CheckInService {
         // Validate arrival date is not in the past
         if (request.getArrivalDate().isBefore(LocalDate.now())) {
             throw new RuntimeException("Arrival date cannot be in the past");
+        }
+        
+        // Validate foreign key relationships if provided
+        if (request.getArrivalModeId() != null && !request.getArrivalModeId().trim().isEmpty()) {
+            if (!arrivalModeRepository.existsById(request.getArrivalModeId())) {
+                throw new RuntimeException("Invalid arrival mode ID: " + request.getArrivalModeId());
+            }
+        }
+        
+        if (request.getCompanyId() != null && !request.getCompanyId().trim().isEmpty()) {
+            if (!companyRepository.existsById(request.getCompanyId())) {
+                throw new RuntimeException("Invalid company ID: " + request.getCompanyId());
+            }
+        }
+        
+        if (request.getPlanId() != null && !request.getPlanId().trim().isEmpty()) {
+            if (!planTypeRepository.existsById(request.getPlanId())) {
+                throw new RuntimeException("Invalid plan type ID: " + request.getPlanId());
+            }
+        }
+        
+        if (request.getRoomTypeId() != null && !request.getRoomTypeId().trim().isEmpty()) {
+            if (!roomTypeRepository.existsById(request.getRoomTypeId())) {
+                throw new RuntimeException("Invalid room type ID: " + request.getRoomTypeId());
+            }
+        }
+        
+        if (request.getSettlementTypeId() != null && !request.getSettlementTypeId().trim().isEmpty()) {
+            if (!settlementTypeRepository.existsById(request.getSettlementTypeId())) {
+                throw new RuntimeException("Invalid settlement type ID: " + request.getSettlementTypeId());
+            }
+        }
+        
+        if (request.getNationalityId() != null && !request.getNationalityId().trim().isEmpty()) {
+            if (!nationalityRepository.existsById(request.getNationalityId())) {
+                throw new RuntimeException("Invalid nationality ID: " + request.getNationalityId());
+            }
+        }
+        
+        if (request.getRefModeId() != null && !request.getRefModeId().trim().isEmpty()) {
+            if (!refModeRepository.existsById(request.getRefModeId())) {
+                throw new RuntimeException("Invalid reference mode ID: " + request.getRefModeId());
+            }
+        }
+        
+        if (request.getResvSourceId() != null && !request.getResvSourceId().trim().isEmpty()) {
+            if (!resvSourceRepository.existsById(request.getResvSourceId())) {
+                throw new RuntimeException("Invalid reservation source ID: " + request.getResvSourceId());
+            }
         }
     }
     

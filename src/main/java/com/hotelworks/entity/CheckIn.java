@@ -63,31 +63,31 @@ public class CheckIn {
     private String idProof3;
     
     // Additional fields as per your request (newly added)
-    @Column(name = "company_id")
+    @Column(name = "company_id", nullable = true)
     private String companyId;
     
-    @Column(name = "plan_id")
+    @Column(name = "plan_id", nullable = true)
     private String planId;
     
-    @Column(name = "room_type_id")
+    @Column(name = "room_type_id", nullable = true)
     private String roomTypeId;
     
-    @Column(name = "settlement_type_id")
+    @Column(name = "settlement_type_id", nullable = true)
     private String settlementTypeId;
     
-    @Column(name = "arrival_mode_id")
+    @Column(name = "arrival_mode_id", nullable = true)
     private String arrivalModeId;
     
-    @Column(name = "arrival_details")
+    @Column(name = "arrival_details", nullable = true)
     private String arrivalDetails;
     
-    @Column(name = "nationality_id")
+    @Column(name = "nationality_id", nullable = true)
     private String nationalityId;
     
-    @Column(name = "ref_mode_id")
+    @Column(name = "ref_mode_id", nullable = true)
     private String refModeId;
     
-    @Column(name = "resv_source_id")
+    @Column(name = "resv_source_id", nullable = true)
     private String resvSourceId;
     
     // Relationships
@@ -100,35 +100,35 @@ public class CheckIn {
     private Room room;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id", insertable = false, updatable = false)
+    @JoinColumn(name = "company_id", insertable = false, updatable = false, nullable = true)
     private Company company;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "plan_id", insertable = false, updatable = false)
+    @JoinColumn(name = "plan_id", insertable = false, updatable = false, nullable = true)
     private PlanType planType;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_type_id", insertable = false, updatable = false)
+    @JoinColumn(name = "room_type_id", insertable = false, updatable = false, nullable = true)
     private RoomType roomType;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "settlement_type_id", insertable = false, updatable = false)
+    @JoinColumn(name = "settlement_type_id", insertable = false, updatable = false, nullable = true)
     private BillSettlementType settlementType;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "arrival_mode_id", insertable = false, updatable = false)
+    @JoinColumn(name = "arrival_mode_id", insertable = false, updatable = false, nullable = true)
     private ArrivalMode arrivalMode;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "nationality_id", insertable = false, updatable = false)
+    @JoinColumn(name = "nationality_id", insertable = false, updatable = false, nullable = true)
     private Nationality nationality;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ref_mode_id", insertable = false, updatable = false)
+    @JoinColumn(name = "ref_mode_id", insertable = false, updatable = false, nullable = true)
     private RefMode refMode;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resv_source_id", insertable = false, updatable = false)
+    @JoinColumn(name = "resv_source_id", insertable = false, updatable = false, nullable = true)
     private ResvSource resvSource;
     
     // Constructors
