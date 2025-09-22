@@ -66,6 +66,22 @@ public class CheckInService {
         checkIn.setAuditDate(LocalDate.now());
         checkIn.setWalkIn(request.getWalkIn());
         
+        // Set ID proof fields
+        checkIn.setIdProof1(request.getIdProof1());
+        checkIn.setIdProof2(request.getIdProof2());
+        checkIn.setIdProof3(request.getIdProof3());
+        
+        // Set additional fields
+        checkIn.setCompanyId(request.getCompanyId());
+        checkIn.setPlanId(request.getPlanId());
+        checkIn.setRoomTypeId(request.getRoomTypeId());
+        checkIn.setSettlementTypeId(request.getSettlementTypeId());
+        checkIn.setArrivalModeId(request.getArrivalModeId());
+        checkIn.setArrivalDetails(request.getArrivalDetails());
+        checkIn.setNationalityId(request.getNationalityId());
+        checkIn.setRefModeId(request.getRefModeId());
+        checkIn.setResvSourceId(request.getResvSourceId());
+        
         // Save check-in
         CheckIn savedCheckIn = checkInRepository.save(checkIn);
         
@@ -169,6 +185,56 @@ public class CheckInService {
             checkIn.setEmailId(request.getEmailId());
         }
         
+        // Update ID proof fields if provided
+        if (request.getIdProof1() != null) {
+            checkIn.setIdProof1(request.getIdProof1());
+        }
+        
+        if (request.getIdProof2() != null) {
+            checkIn.setIdProof2(request.getIdProof2());
+        }
+        
+        if (request.getIdProof3() != null) {
+            checkIn.setIdProof3(request.getIdProof3());
+        }
+        
+        // Update additional fields if provided
+        if (request.getCompanyId() != null) {
+            checkIn.setCompanyId(request.getCompanyId());
+        }
+        
+        if (request.getPlanId() != null) {
+            checkIn.setPlanId(request.getPlanId());
+        }
+        
+        if (request.getRoomTypeId() != null) {
+            checkIn.setRoomTypeId(request.getRoomTypeId());
+        }
+        
+        if (request.getSettlementTypeId() != null) {
+            checkIn.setSettlementTypeId(request.getSettlementTypeId());
+        }
+        
+        if (request.getArrivalModeId() != null) {
+            checkIn.setArrivalModeId(request.getArrivalModeId());
+        }
+        
+        if (request.getArrivalDetails() != null) {
+            checkIn.setArrivalDetails(request.getArrivalDetails());
+        }
+        
+        if (request.getNationalityId() != null) {
+            checkIn.setNationalityId(request.getNationalityId());
+        }
+        
+        if (request.getRefModeId() != null) {
+            checkIn.setRefModeId(request.getRefModeId());
+        }
+        
+        if (request.getResvSourceId() != null) {
+            checkIn.setResvSourceId(request.getResvSourceId());
+        }
+        
         CheckIn savedCheckIn = checkInRepository.save(checkIn);
         return mapToCheckInResponse(savedCheckIn);
     }
@@ -247,6 +313,56 @@ public class CheckInService {
             if (request.getDepartureDate() == null) {
                 request.setDepartureDate(reservation.getDepartureDate());
             }
+            
+            // Auto-populate ID proof fields if not provided
+            if (request.getIdProof1() == null) {
+                request.setIdProof1(reservation.getIdProof1());
+            }
+            
+            if (request.getIdProof2() == null) {
+                request.setIdProof2(reservation.getIdProof2());
+            }
+            
+            if (request.getIdProof3() == null) {
+                request.setIdProof3(reservation.getIdProof3());
+            }
+            
+            // Auto-populate additional fields if not provided
+            if (request.getCompanyId() == null) {
+                request.setCompanyId(reservation.getCompanyId());
+            }
+            
+            if (request.getPlanId() == null) {
+                request.setPlanId(reservation.getPlanId());
+            }
+            
+            if (request.getRoomTypeId() == null) {
+                request.setRoomTypeId(reservation.getRoomTypeId());
+            }
+            
+            if (request.getSettlementTypeId() == null) {
+                request.setSettlementTypeId(reservation.getSettlementTypeId());
+            }
+            
+            if (request.getArrivalModeId() == null) {
+                request.setArrivalModeId(reservation.getArrivalModeId());
+            }
+            
+            if (request.getArrivalDetails() == null) {
+                request.setArrivalDetails(reservation.getArrivalDetails());
+            }
+            
+            if (request.getNationalityId() == null) {
+                request.setNationalityId(reservation.getNationalityId());
+            }
+            
+            if (request.getRefModeId() == null) {
+                request.setRefModeId(reservation.getRefModeId());
+            }
+            
+            if (request.getResvSourceId() == null) {
+                request.setResvSourceId(reservation.getResvSourceId());
+            }
         }
     }
     
@@ -264,6 +380,22 @@ public class CheckInService {
         response.setRemarks(checkIn.getRemarks());
         response.setAuditDate(checkIn.getAuditDate());
         response.setWalkIn(checkIn.getWalkIn());
+        
+        // Set ID proof fields
+        response.setIdProof1(checkIn.getIdProof1());
+        response.setIdProof2(checkIn.getIdProof2());
+        response.setIdProof3(checkIn.getIdProof3());
+        
+        // Set additional fields
+        response.setCompanyId(checkIn.getCompanyId());
+        response.setPlanId(checkIn.getPlanId());
+        response.setRoomTypeId(checkIn.getRoomTypeId());
+        response.setSettlementTypeId(checkIn.getSettlementTypeId());
+        response.setArrivalModeId(checkIn.getArrivalModeId());
+        response.setArrivalDetails(checkIn.getArrivalDetails());
+        response.setNationalityId(checkIn.getNationalityId());
+        response.setRefModeId(checkIn.getRefModeId());
+        response.setResvSourceId(checkIn.getResvSourceId());
         
         // Set room number by fetching from repository (consistent pattern)
         if (checkIn.getRoomId() != null) {

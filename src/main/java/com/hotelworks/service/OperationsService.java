@@ -79,7 +79,7 @@ public class OperationsService {
     }
     
     /**
-     * Process shift change - updates shift table with balance
+     * Process shift change - updates shift table with all shift details
      */
     public String processShiftChange(ShiftChangeRequest request) {
         // Check if shift record already exists
@@ -88,15 +88,22 @@ public class OperationsService {
         
         if (existingShift != null) {
             // Update existing shift
-            existingShift.setBalance(request.getBalance());
+            existingShift.setOpeningBalance(request.getOpeningBalance());
+            existingShift.setClosingBalance(request.getClosingBalance());
+            existingShift.setTotalIncome(request.getTotalIncome());
+            existingShift.setTotalExpense(request.getTotalExpense());
             shiftRepository.save(existingShift);
-            return "Shift balance updated successfully";
+            return "Shift details updated successfully";
         } else {
             // Create new shift record
             Shift newShift = new Shift();
             newShift.setShiftNo(request.getShiftNo());
             newShift.setShiftDate(request.getShiftDate());
-            newShift.setBalance(request.getBalance());
+            newShift.setAuditDate(request.getShiftDate()); // Audit date same as shift date initially
+            newShift.setOpeningBalance(request.getOpeningBalance());
+            newShift.setClosingBalance(request.getClosingBalance());
+            newShift.setTotalIncome(request.getTotalIncome());
+            newShift.setTotalExpense(request.getTotalExpense());
             shiftRepository.save(newShift);
             return "New shift record created successfully";
         }
@@ -125,7 +132,11 @@ public class OperationsService {
         Shift shift = new Shift();
         shift.setShiftNo(String.valueOf(runningShift));
         shift.setShiftDate(hmsystem.getShiftDate());
-        shift.setBalance(request.getBalance());
+        shift.setAuditDate(hmsystem.getShiftDate()); // Audit date same as shift date initially
+        shift.setOpeningBalance(request.getOpeningBalance());
+        shift.setClosingBalance(request.getClosingBalance());
+        shift.setTotalIncome(request.getTotalIncome());
+        shift.setTotalExpense(request.getTotalExpense());
         shiftRepository.save(shift);
         
         // Check if this is the last shift
@@ -143,14 +154,14 @@ public class OperationsService {
             // Also trigger audit date change for the new date
             processAutomaticAuditDateChange(newHmsystem.getShiftDate());
             
-            return String.format("Shift %d closed successfully. Date changed to %s and running shift reset to 1. Audit date also updated. Balance stored in shift table.",
+            return String.format("Shift %d closed successfully. Date changed to %s and running shift reset to 1. Audit date also updated. All shift details stored in shift table.",
                 runningShift, newHmsystem.getShiftDate().toString());
         } else {
             // Not the last shift - just increment running shift
             hmsystem.setRunningShift(runningShift + 1);
             hmsystemRepository.save(hmsystem);
             
-            return String.format("Shift %d closed successfully. Running shift incremented to %d. Balance stored in shift table.",
+            return String.format("Shift %d closed successfully. Running shift incremented to %d. All shift details stored in shift table.",
                 runningShift, hmsystem.getRunningShift());
         }
     }

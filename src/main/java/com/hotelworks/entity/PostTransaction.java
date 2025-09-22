@@ -41,6 +41,12 @@ public class PostTransaction {
     @Column(name = "voucher_no")
     private String voucherNo;
     
+    @Column(name = "shift_no")
+    private String shiftNo;
+    
+    @Column(name = "shift_date")
+    private LocalDate shiftDate;
+    
     @NotNull
     @Column(name = "amount", nullable = false)
     private BigDecimal amount;
@@ -95,6 +101,12 @@ public class PostTransaction {
     
     public String getVoucherNo() { return voucherNo; }
     public void setVoucherNo(String voucherNo) { this.voucherNo = voucherNo; }
+    
+    public String getShiftNo() { return shiftNo; }
+    public void setShiftNo(String shiftNo) { this.shiftNo = shiftNo; }
+    
+    public LocalDate getShiftDate() { return shiftDate; }
+    public void setShiftDate(LocalDate shiftDate) { this.shiftDate = shiftDate; }
     
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }

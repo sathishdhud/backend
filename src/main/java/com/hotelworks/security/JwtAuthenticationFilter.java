@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * JWT Authentication Filter for token validation
+ * JWT Authentication Filter for token validation with enhanced security
  */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -52,6 +52,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 username = jwtService.extractUsername(token);
                 userTypeId = jwtService.extractUserTypeId(token);
+                
+                // Additional validation for token validity
+                if (!jwtService.isTokenValid(token)) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("{\"error\":\"Token has expired or is invalid\"}");
+                    return;
+                }
             } catch (Exception e) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("{\"error\":\"Invalid token\"}");
@@ -73,6 +80,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     new UsernamePasswordAuthenticationToken(username, null, authorities);
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+            } else {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"error\":\"Token validation failed\"}");
+                return;
             }
         }
         
@@ -85,6 +96,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Skip filter for public endpoints
         return path.equals("/api/users/login") || 
                path.equals("/api/users/logout") ||
+               path.equals("/api/auth/login") || 
+               path.equals("/api/auth/logout") ||
                path.startsWith("/swagger-ui") ||
                path.startsWith("/v3/api-docs") ||
                path.startsWith("/actuator");

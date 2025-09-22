@@ -39,7 +39,7 @@ public class UserManagementService {
     private RolePermissionTemplateService rolePermissionTemplateService;
     
     /**
-     * Authenticate user login and generate JWT token
+     * Authenticate user login and generate JWT token with 30-minute expiration
      */
     public UserLoginResponse authenticateUser(UserLoginRequest request) {
         HotelSoftUser user = hotelSoftUserRepository.findByUserName(request.getUserName())
@@ -50,7 +50,7 @@ public class UserManagementService {
             throw new RuntimeException("Invalid username or password");
         }
         
-        // Generate JWT token with userTypeRole
+        // Generate JWT token with userTypeRole and 30-minute expiration
         String token = jwtService.generateToken(
             user.getUserId(), 
             user.getUserName(), 

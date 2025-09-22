@@ -17,11 +17,11 @@ public class JwtService {
     @Value("${jwt.secret:hotelworks-jwt-secret-key-for-authentication-system-2025}")
     private String jwtSecret;
     
-    @Value("${jwt.expiration:86400000}") // 24 hours in milliseconds
+    @Value("${jwt.expiration:1800000}") // 30 minutes in milliseconds
     private long jwtExpiration;
     
     /**
-     * Generate JWT token for user
+     * Generate JWT token for user with 30-minute expiration
      */
     public String generateToken(String userId, String userName, String userTypeId, String userTypeRole) {
         Map<String, Object> claims = new HashMap<>();
@@ -35,7 +35,7 @@ public class JwtService {
     }
     
     /**
-     * Create JWT token with claims
+     * Create JWT token with claims and 30-minute expiration
      */
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
@@ -125,19 +125,28 @@ public class JwtService {
      * Check if token is expired
      */
     private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        try {
+            return extractExpiration(token).before(new Date());
+        } catch (Exception e) {
+            // If we can't extract expiration, consider token expired
+            return true;
+        }
     }
     
     /**
-     * Validate token
+     * Validate token with enhanced security checks
      */
     public Boolean validateToken(String token, String username) {
-        final String extractedUsername = extractUsername(token);
-        return (extractedUsername.equals(username) && !isTokenExpired(token));
+        try {
+            final String extractedUsername = extractUsername(token);
+            return (extractedUsername.equals(username) && !isTokenExpired(token));
+        } catch (Exception e) {
+            return false;
+        }
     }
     
     /**
-     * Check if token is valid
+     * Check if token is valid with enhanced security checks
      */
     public Boolean isTokenValid(String token) {
         try {
@@ -146,5 +155,12 @@ public class JwtService {
         } catch (Exception e) {
             return false;
         }
+    }
+    
+    /**
+     * Get token expiration time in milliseconds
+     */
+    public long getTokenExpirationTime() {
+        return jwtExpiration;
     }
 }

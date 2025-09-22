@@ -26,7 +26,7 @@ public class AccountHeadService {
      */
     public AccountHeadResponse createAccountHead(AccountHeadRequest request) {
         // Generate account head ID if not provided
-        String accountHeadId = request.getAccountHeadId();
+        String accountHeadId = request.getAccHeadId();
         if (accountHeadId == null || accountHeadId.trim().isEmpty()) {
             accountHeadId = numberGenerationService.generateAccountHeadId();
         }
@@ -38,7 +38,10 @@ public class AccountHeadService {
         
         HotelAccountHead accountHead = new HotelAccountHead();
         accountHead.setAccHeadId(accountHeadId);
-        accountHead.setName(request.getAccountName());
+        accountHead.setName(request.getName());
+        accountHead.setCompanyName(request.getCompanyName());
+        accountHead.setChequeNumber(request.getChequeNumber());
+        accountHead.setDate(request.getDate());
         
         HotelAccountHead savedAccountHead = hotelAccountHeadRepository.save(accountHead);
         return mapToAccountHeadResponse(savedAccountHead);
@@ -70,7 +73,10 @@ public class AccountHeadService {
         HotelAccountHead accountHead = hotelAccountHeadRepository.findById(accountHeadId)
             .orElseThrow(() -> new RuntimeException("Account head not found: " + accountHeadId));
         
-        accountHead.setName(request.getAccountName());
+        accountHead.setName(request.getName());
+        accountHead.setCompanyName(request.getCompanyName());
+        accountHead.setChequeNumber(request.getChequeNumber());
+        accountHead.setDate(request.getDate());
         
         HotelAccountHead updatedAccountHead = hotelAccountHeadRepository.save(accountHead);
         return mapToAccountHeadResponse(updatedAccountHead);
@@ -88,8 +94,11 @@ public class AccountHeadService {
     
     private AccountHeadResponse mapToAccountHeadResponse(HotelAccountHead accountHead) {
         AccountHeadResponse response = new AccountHeadResponse();
-        response.setAccountHeadId(accountHead.getAccHeadId());
-        response.setAccountName(accountHead.getName());
+        response.setAccHeadId(accountHead.getAccHeadId());
+        response.setName(accountHead.getName());
+        response.setCompanyName(accountHead.getCompanyName());
+        response.setChequeNumber(accountHead.getChequeNumber());
+        response.setDate(accountHead.getDate());
         return response;
     }
 }

@@ -88,6 +88,61 @@ Authorization: Bearer <token>
 
 ---
 
+## Enhanced Authentication System
+
+### JWT Token Authentication (Recommended)
+```http
+POST   /api/auth/login                      # JWT-based login with 30-minute expiration
+POST   /api/auth/logout                     # Secure JWT logout with session invalidation
+```
+
+**Enhanced Features:**
+- **30-Minute Token Expiration**: Tokens automatically expire after 30 minutes for enhanced security
+- **Tab Closing Detection**: Tokens invalidated when browser tabs are closed
+- **Automatic Session Management**: Frontend session manager handles token lifecycle
+- **User Notifications**: Warning alerts 5 minutes before token expiration
+- **Immediate Blacklisting**: Tokens invalidated instantly on logout
+
+**Login Request:**
+```json
+{
+  "userName": "admin",
+  "password": "admin123"
+}
+```
+
+**Login Response:**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "userId": "USR001",
+    "userName": "admin",
+    "userTypeId": "UTYPE001",
+    "userTypeRole": "Administrator",
+    "userTypeName": "Administrator",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "loginSuccess": true,
+    "permissions": [
+      {
+        "moduleName": "reservations",
+        "permissionType": "full"
+      }
+    ]
+  },
+  "timestamp": "2025-09-22T10:30:00"
+}
+```
+
+**Security Features:**
+- HttpOnly cookies with SameSite attribute
+- Synchronized session and token expiration
+- Automatic token clearing on tab close
+- Immediate token blacklisting on logout
+
+---
+
 ## Role-Based Access Control
 
 ### User Roles
@@ -107,6 +162,7 @@ Authorization: Bearer <token>
 
 ### Role Management APIs
 ```http
+
 GET /api/users/roles                     # Get available roles
 POST /api/users/create-with-role         # Create user with role
 PUT /api/users/{userId}/role             # Update user role
@@ -4171,46 +4227,58 @@ POST   /api/operations/shift-change
 - Update existing shifts or create new records
 - Maintain audit trail of shift handovers
 
-#### **Shift Close Management**
-Advanced shift closing with automatic rotation logic:
+#### **Shift Close Management (Enhanced)**
+Advanced shift closing with comprehensive financial tracking:
 
-```http
-POST   /api/operations/shift-close
+``http
+POST   /api/operations/shift-close          # Close current shift with auto-rotation
 ```
 
-**Features:**
-- Close current shift and store balance in shift table
-- Automatically increment running shift number
-- When reaching total shift count, advance shift date and reset running shift to 1
-- Automatically trigger audit date change when shift date advances
-- Maintain HMS system configuration
+**Enhanced Features:**
+- Complete financial tracking with opening/closing balances
+- Income and expense tracking per shift
+- Audit date management for compliance
+- Automatic shift rotation logic
+- HMS system integration
 
-**Close Shift Request:**
+**Enhanced Close Shift Request:**
 ```json
 {
-  "balance": 15000.00
+  "openingBalance": 10000.00,
+  "closingBalance": 15000.00,
+  "totalIncome": 7500.00,
+  "totalExpense": 2500.00
 }
 ```
 
-**Close Shift Response (Normal Shift):**
+**Enhanced Close Shift Response (Normal Shift):**
 ```json
 {
   "success": true,
-  "message": "Shift 1 closed successfully. Running shift incremented to 2. Balance stored in shift table.",
+  "message": "Shift 1 closed successfully. Running shift incremented to 2. All shift details stored in shift table.",
   "data": null,
   "timestamp": "2025-09-20T10:30:00"
 }
 ```
 
-**Close Shift Response (Last Shift):**
+**Enhanced Close Shift Response (Last Shift):**
 ```json
 {
   "success": true,
-  "message": "Shift 3 closed successfully. Date changed to 2025-09-21 and running shift reset to 1. Audit date also updated. Balance stored in shift table.",
+  "message": "Shift 3 closed successfully. Date changed to 2025-09-21 and running shift reset to 1. Audit date also updated. All shift details stored in shift table.",
   "data": null,
   "timestamp": "2025-09-20T10:30:00"
 }
 ```
+
+**Enhanced Shift Fields:**
+- **Shift Number** (Unique identifier for shift)
+- **Shift Date** (Date of shift operations)
+- **Audit Date** (Audit tracking date)
+- **Opening Balance** (Starting balance of shift)
+- **Closing Balance** (Ending balance of shift)
+- **Total Income** (Income during shift)
+- **Total Expense** (Expenses during shift)
 
 #### **HMS System Information**
 Retrieve the latest HMS system configuration:
@@ -4388,4 +4456,100 @@ GET    /api/operations/hmsystem             # Get HMS system information
 
 ---
 
-*API Documentation Version 2.0.0 - Complete Hotel Management System with Advanced Features*
+*API Documentation Version 2.0.0 - Complete Hotel Management System with Advanced Features*# #   T r a n s a c t i o n   M a n a g e m e n t   A P I s 
+ A d v a n c e d   t r a n s a c t i o n   h a n d l i n g   w i t h   s h i f t   t r a c k i n g : 
+ 
+ ` h t t p 
+ P O S T       / a p i / t r a n s a c t i o n s / e x p e n s e s 
+ P O S T       / a p i / t r a n s a c t i o n s / s a l e s - r e c e i p t s 
+ G E T         / a p i / t r a n s a c t i o n s / e x p e n s e s 
+ G E T         / a p i / t r a n s a c t i o n s / s a l e s - r e c e i p t s 
+ ` 
+ 
+ * * F e a t u r e s : * * 
+ -   C o m p l e t e   e x p e n s e   t r a c k i n g   w i t h   v o u c h e r   n u m b e r s 
+ -   S a l e s   r e c e i p t   m a n a g e m e n t   w i t h   p a y m e n t   m o d e s 
+ -   S h i f t   n u m b e r   a n d   d a t e   t r a c k i n g   f o r   a l l   t r a n s a c t i o n s 
+ -   D e t a i l e d   n a r r a t i o n   s u p p o r t 
+ -   A c c o u n t   h e a d   a n d   p a y m e n t   m o d e   i n t e g r a t i o n 
+ 
+ # # #   E x p e n s e   M a n a g e m e n t 
+ T r a c k   a l l   h o t e l   e x p e n s e s   w i t h   c o m p l e t e   a u d i t   t r a i l : 
+ 
+ ` h t t p 
+ P O S T       / a p i / t r a n s a c t i o n s / e x p e n s e s                     #   C r e a t e   e x p e n s e 
+ G E T         / a p i / t r a n s a c t i o n s / e x p e n s e s                     #   G e t   a l l   e x p e n s e s 
+ ` 
+ 
+ * * E x p e n s e   F i e l d s : * * 
+ -   V o u c h e r   N u m b e r   ( U n i q u e   i d e n t i f i e r ) 
+ -   D a t e   ( T r a n s a c t i o n   d a t e ) 
+ -   A c c o u n t   H e a d   ( E x p e n s e   c a t e g o r y ) 
+ -   A m o u n t   ( T r a n s a c t i o n   a m o u n t ) 
+ -   N a r r a t i o n   ( D e s c r i p t i o n ) 
+ -   S h i f t   N u m b e r   ( W h e n   t r a n s a c t i o n   o c c u r r e d ) 
+ -   S h i f t   D a t e   ( D a t e   o f   s h i f t ) 
+ 
+ # # #   S a l e s   R e c e i p t   M a n a g e m e n t 
+ M a n a g e   a l l   s a l e s   r e c e i p t s   w i t h   p a y m e n t   t r a c k i n g : 
+ 
+ ` h t t p 
+ P O S T       / a p i / t r a n s a c t i o n s / s a l e s - r e c e i p t s         #   C r e a t e   s a l e s   r e c e i p t 
+ G E T         / a p i / t r a n s a c t i o n s / s a l e s - r e c e i p t s         #   G e t   a l l   s a l e s   r e c e i p t s 
+ ` 
+ 
+ * * S a l e s   R e c e i p t   F i e l d s : * * 
+ -   R e c e i p t   N u m b e r   ( U n i q u e   i d e n t i f i e r ) 
+ -   D a t e   ( R e c e i p t   d a t e ) 
+ -   M o d e   o f   P a y m e n t   ( P a y m e n t   m e t h o d ) 
+ -   A m o u n t   ( R e c e i p t   a m o u n t ) 
+ -   V o u c h e r   N u m b e r   ( A s s o c i a t e d   v o u c h e r ) 
+ -   N a r r a t i o n   ( D e s c r i p t i o n ) 
+ -   S h i f t   N u m b e r   ( W h e n   t r a n s a c t i o n   o c c u r r e d ) 
+ -   S h i f t   D a t e   ( D a t e   o f   s h i f t ) 
+ 
+ # # #   A c c o u n t   H e a d   M a n a g e m e n t   ( E n h a n c e d ) 
+ M a n a g e   a c c o u n t   h e a d s   w i t h   c o m p a n y   n a m e ,   c h e q u e   n u m b e r ,   a n d   d a t e   t r a c k i n g : 
+ 
+ ` h t t p 
+ P O S T       / a p i / a c c o u n t - h e a d s                             #   C r e a t e   a c c o u n t   h e a d 
+ G E T         / a p i / a c c o u n t - h e a d s                             #   G e t   a l l   a c c o u n t   h e a d s 
+ G E T         / a p i / a c c o u n t - h e a d s / { i d }                   #   G e t   a c c o u n t   h e a d   b y   I D 
+ P U T         / a p i / a c c o u n t - h e a d s / { i d }                   #   U p d a t e   a c c o u n t   h e a d 
+ D E L E T E   / a p i / a c c o u n t - h e a d s / { i d }                   #   D e l e t e   a c c o u n t   h e a d 
+ ` 
+ 
+ * * E n h a n c e d   A c c o u n t   H e a d   F i e l d s : * * 
+ -   A c c o u n t   H e a d   I D   ( U n i q u e   i d e n t i f i e r ) 
+ -   N a m e   ( A c c o u n t   h e a d   n a m e ) 
+ -   C o m p a n y   N a m e   ( A s s o c i a t e d   c o m p a n y ) 
+ -   C h e q u e   N u m b e r   ( T r a n s a c t i o n   c h e q u e   n u m b e r ) 
+ -   D a t e   ( T r a n s a c t i o n   d a t e ) 
+ 
+ # # #   C h e c k - i n   M a n a g e m e n t   ( E n h a n c e d ) 
+ P r o c e s s   g u e s t   c h e c k - i n s   w i t h   c o m p r e h e n s i v e   I D   p r o o f   a n d   a d d i t i o n a l   d e t a i l s   t r a c k i n g : 
+ 
+ ` h t t p 
+ P O S T       / a p i / c h e c k i n s                                       #   P r o c e s s   c h e c k - i n 
+ G E T         / a p i / c h e c k i n s / { f o l i o N o }                   #   G e t   c h e c k - i n   b y   f o l i o   n u m b e r 
+ G E T         / a p i / c h e c k i n s / r o o m / { r o o m I d }           #   G e t   c h e c k - i n   b y   r o o m 
+ G E T         / a p i / c h e c k i n s / s e a r c h                         #   S e a r c h   c h e c k - i n s 
+ G E T         / a p i / c h e c k i n s / i n h o u s e                       #   G e t   i n - h o u s e   g u e s t s 
+ G E T         / a p i / c h e c k i n s / c h e c k o u t s / { d a t e }     #   G e t   e x p e c t e d   c h e c k o u t s 
+ P U T         / a p i / c h e c k i n s / { f o l i o N o }                   #   U p d a t e   c h e c k - i n   d e t a i l s 
+ ` 
+ 
+ * * E n h a n c e d   C h e c k - i n   F i e l d s : * * 
+ -   F o l i o   N u m b e r   ( U n i q u e   i d e n t i f i e r ) 
+ -   R e s e r v a t i o n   N u m b e r   ( F o r   r e s e r v a t i o n   c h e c k - i n s ) 
+ -   G u e s t   N a m e 
+ -   R o o m   I n f o r m a t i o n 
+ -   A r r i v a l / D e p a r t u r e   D a t e s 
+ -   C o n t a c t   I n f o r m a t i o n 
+ -   R a t e   a n d   R e m a r k s 
+ -   I D   P r o o f s   ( U p   t o   3   d o c u m e n t s ) 
+ -   C o m p a n y ,   P l a n ,   a n d   R o o m   T y p e 
+ -   S e t t l e m e n t ,   A r r i v a l   M o d e ,   a n d   N a t i o n a l i t y 
+ -   R e f e r e n c e   M o d e   a n d   R e s e r v a t i o n   S o u r c e 
+ 
+ 

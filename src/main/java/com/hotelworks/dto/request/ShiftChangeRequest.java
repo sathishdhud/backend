@@ -12,7 +12,10 @@ public class ShiftChangeRequest {
     @NotNull(message = "Shift number is required")
     private String shiftNo;
     
-    private BigDecimal balance;
+    private BigDecimal openingBalance;
+    private BigDecimal closingBalance;
+    private BigDecimal totalIncome;
+    private BigDecimal totalExpense;
     
     // Constructors
     public ShiftChangeRequest() {}
@@ -24,6 +27,15 @@ public class ShiftChangeRequest {
     public String getShiftNo() { return shiftNo; }
     public void setShiftNo(String shiftNo) { this.shiftNo = shiftNo; }
     
-    public BigDecimal getBalance() { return balance; }
-    public void setBalance(BigDecimal balance) { this.balance = balance; }
+    public BigDecimal getOpeningBalance() { return openingBalance; }
+    public void setOpeningBalance(BigDecimal openingBalance) { this.openingBalance = openingBalance; }
+    
+    public BigDecimal getClosingBalance() { return closingBalance; }
+    public void setClosingBalance(BigDecimal closingBalance) { this.closingBalance = closingBalance; }
+    
+    public BigDecimal getTotalIncome() { return totalIncome; }
+    public void setTotalIncome(BigDecimal totalIncome) { this.totalIncome = totalIncome; }
+    
+    public BigDecimal getTotalExpense() { return totalExpense; }
+    public void setTotalExpense(BigDecimal totalExpense) { this.totalExpense = totalExpense; }
 }
