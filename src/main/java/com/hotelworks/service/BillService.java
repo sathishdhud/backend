@@ -55,6 +55,9 @@ public class BillService {
     @Autowired
     private NumberGenerationService numberGenerationService;
     
+    @Autowired
+    private EmailService emailService;
+    
     /**
      * Generate bill for checkout
      */
@@ -133,6 +136,16 @@ public class BillService {
                 advance.setBillNo(savedBill.getBillNo());
                 advanceRepository.save(advance);
             }
+        }
+        
+        // Send email confirmation if email is provided
+        if (checkIn.getEmailId() != null && !checkIn.getEmailId().isEmpty()) {
+            emailService.sendBillConfirmation(
+                checkIn.getEmailId(),
+                checkIn.getGuestName(),
+                savedBill.getBillNo(),
+                savedBill.getTotalAmount().toString()
+            );
         }
         
         return mapToBillResponse(savedBill);

@@ -9,7 +9,9 @@ D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\scheduler\GstHan
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\entity\FoBillBalanceTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\entity\FoBillTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\BillGenerationFlowTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\EmailServiceTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\ReservationGstHandlingTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\entity\FoBillAdvanceTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\BillRoomChargesTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\entity\FoBillTransactionTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\EmailServiceIntegrationTest.java

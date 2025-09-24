@@ -298,4 +298,60 @@ public class AdvanceController {
                 .body(ApiResponse.error("Failed to create advance: " + e.getMessage()));
         }
     }
+    
+    @GetMapping("/room/{roomNo}")
+    @Operation(summary = "Get advances by room number", description = "Get all advances for a specific room number")
+    public ResponseEntity<ApiResponse<List<AdvanceResponse>>> getAdvancesByRoom(
+            @Parameter(description = "Room number") @PathVariable String roomNo) {
+        try {
+            List<AdvanceResponse> responses = advanceService.getAdvancesByRoom(roomNo);
+            return ResponseEntity.ok(ApiResponse.success(responses));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Failed to get advances: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/room/{roomNo}/total")
+    @Operation(summary = "Get total advances by room number", description = "Get total advance amount for a specific room number")
+    public ResponseEntity<ApiResponse<BigDecimal>> getTotalAdvancesByRoom(
+            @Parameter(description = "Room number") @PathVariable String roomNo) {
+        try {
+            BigDecimal total = advanceService.getTotalAdvancesByRoom(roomNo);
+            return ResponseEntity.ok(ApiResponse.success(total));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Failed to get total advances: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/reservation/{reservationNo}/room/{roomNo}")
+    @Operation(summary = "Get advances by reservation and room", description = "Get all advances for a specific reservation and room combination")
+    public ResponseEntity<ApiResponse<List<AdvanceResponse>>> getAdvancesByReservationAndRoom(
+            @Parameter(description = "Reservation number") @PathVariable String reservationNo,
+            @Parameter(description = "Room number") @PathVariable String roomNo) {
+        try {
+            List<AdvanceResponse> responses = advanceService.getAdvancesByReservationAndRoom(reservationNo, roomNo);
+            return ResponseEntity.ok(ApiResponse.success(responses));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Failed to get advances: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/room/{roomNo}")
+    @Operation(summary = "Create advance for room", description = "Create advance payment for a specific room number")
+    public ResponseEntity<ApiResponse<AdvanceResponse>> createAdvanceForRoom(
+            @Parameter(description = "Room number") @PathVariable String roomNo,
+            @Valid @RequestBody AdvanceRequest request) {
+        try {
+            AdvanceResponse response = advanceService.createAdvanceForRoom(roomNo, request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Advance created successfully for room", response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Failed to create advance: " + e.getMessage()));
+        }
+    }
+
 }

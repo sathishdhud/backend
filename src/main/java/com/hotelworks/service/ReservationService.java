@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -76,6 +77,9 @@ public class ReservationService {
     
     @Autowired
     private DeletedReservationRepository deletedReservationRepository;
+    
+    @Autowired
+    private EmailService emailService;
     
     /**
      * Create a new reservation
@@ -131,6 +135,16 @@ public class ReservationService {
         reservation.setResvSourceId(request.getResvSourceId());
         
         Reservation savedReservation = reservationRepository.save(reservation);
+        
+        // Send email confirmation if email is provided
+        if (savedReservation.getEmailId() != null && !savedReservation.getEmailId().isEmpty()) {
+            emailService.sendReservationConfirmation(
+                savedReservation.getEmailId(),
+                savedReservation.getGuestName(),
+                savedReservation.getReservationNo()
+            );
+        }
+        
         return mapToReservationResponse(savedReservation);
     }
     

@@ -180,6 +180,12 @@ http://localhost:8080/api
 - `POST /shift-close` - Close current shift with automatic rotation logic
 - `GET /hmsystem` - Get latest HMS system information
 
+### 10. Email Testing (`/api/test`)
+- `POST /send-test-email` - Send a test email
+- `POST /send-reservation-confirmation` - Send reservation confirmation email
+- `POST /send-checkin-confirmation` - Send check-in confirmation email
+- `POST /send-bill-confirmation` - Send bill confirmation email
+
 ### Room Status Codes
 - **VR**: Vacant Ready (Green - Available for check-in)
 - **OD**: Occupied Dirty (Red - Guest checked in)

@@ -75,6 +75,9 @@ public class CheckInService {
     @Autowired
     private RoomStatusManagementService roomStatusManagementService;
     
+    @Autowired
+    private EmailService emailService;
+    
     /**
      * Process check-in for a guest
      */
@@ -155,6 +158,15 @@ public class CheckInService {
         // If not a walk-in, increment reservation check-in count
         if (!"Y".equals(request.getWalkIn()) && request.getReservationNo() != null) {
             reservationService.incrementRoomsCheckedIn(request.getReservationNo());
+        }
+        
+        // Send email confirmation if email is provided
+        if (savedCheckIn.getEmailId() != null && !savedCheckIn.getEmailId().isEmpty()) {
+            emailService.sendCheckInConfirmation(
+                savedCheckIn.getEmailId(),
+                savedCheckIn.getGuestName(),
+                savedCheckIn.getFolioNo()
+            );
         }
         
         return mapToCheckInResponse(savedCheckIn);

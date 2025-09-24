@@ -1,3 +1,4 @@
+D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\service\EmailService.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\response\PostTransactionResponse.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\entity\SalesReceipt.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\repository\CompanyRepository.java
@@ -106,6 +107,7 @@ D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\enums\ModuleName
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\dto\request\UserCreateRequest.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\controller\SettlementTypeController.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\controller\PlanTypeController.java
+D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\controller\EmailTestController.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\service\AdvanceService.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\service\ArrivalModeService.java
 D:\ashward\hotelmanager\hotelworks\src\main\java\com\hotelworks\service\TransactionService.java

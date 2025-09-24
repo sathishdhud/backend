@@ -117,6 +117,41 @@ public class AdvanceService {
     }
     
     /**
+     * Create advance for room by room number
+     */
+    public AdvanceResponse createAdvanceForRoom(String roomNo, AdvanceRequest request) {
+        validateAdvanceRequest(request);
+        
+        // First get the room by room number to get the room ID
+        com.hotelworks.entity.Room room = roomRepository.findByRoomNo(roomNo)
+            .orElseThrow(() -> new RuntimeException("Room not found: " + roomNo));
+        
+        // Get all check-ins for this room
+        List<CheckIn> checkIns = checkInRepository.findByRoomId(room.getRoomId());
+        
+        if (checkIns.isEmpty()) {
+            throw new RuntimeException("No check-ins found for room: " + roomNo);
+        }
+        
+        // Use the most recent check-in for this room
+        CheckIn mostRecentCheckIn = checkIns.get(0);
+        for (CheckIn checkIn : checkIns) {
+            if (checkIn.getArrivalDate().isAfter(mostRecentCheckIn.getArrivalDate())) {
+                mostRecentCheckIn = checkIn;
+            }
+        }
+        
+        // Set the folio number from the check-in
+        request.setFolioNo(mostRecentCheckIn.getFolioNo());
+        
+        Advance advance = createAdvanceEntity(request);
+        advance.setFolioNo(mostRecentCheckIn.getFolioNo());
+        
+        Advance savedAdvance = advanceRepository.save(advance);
+        return mapToAdvanceResponse(savedAdvance);
+    }
+
+    /**
      * Get advances by reservation number
      */
     public List<AdvanceResponse> getAdvancesByReservation(String reservationNo) {
@@ -147,6 +182,57 @@ public class AdvanceService {
     }
     
     /**
+     * Get advances by room number
+     */
+    public List<AdvanceResponse> getAdvancesByRoom(String roomNo) {
+        // First get the room by room number to get the room ID
+        com.hotelworks.entity.Room room = roomRepository.findByRoomNo(roomNo)
+            .orElseThrow(() -> new RuntimeException("Room not found: " + roomNo));
+        
+        // Get all check-ins for this room
+        List<CheckIn> checkIns = checkInRepository.findByRoomId(room.getRoomId());
+        
+        // Collect all folio numbers from check-ins
+        List<String> folioNos = checkIns.stream()
+            .map(CheckIn::getFolioNo)
+            .filter(folioNo -> folioNo != null && !folioNo.isEmpty())
+            .collect(Collectors.toList());
+        
+        // Get all advances for these folio numbers
+        List<Advance> advances = folioNos.stream()
+            .flatMap(folioNo -> advanceRepository.findByFolioNo(folioNo).stream())
+            .collect(Collectors.toList());
+        
+        return advances.stream()
+            .map(this::mapToAdvanceResponse)
+            .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get advances by reservation number and room number
+     */
+    public List<AdvanceResponse> getAdvancesByReservationAndRoom(String reservationNo, String roomNo) {
+        // First get the room by room number to get the room ID
+        com.hotelworks.entity.Room room = roomRepository.findByRoomNo(roomNo)
+            .orElseThrow(() -> new RuntimeException("Room not found: " + roomNo));
+        
+        // Get check-in for this reservation and room
+        CheckIn checkIn = checkInRepository.findByReservationNo(reservationNo)
+            .orElseThrow(() -> new RuntimeException("Check-in not found for reservation: " + reservationNo));
+        
+        if (!checkIn.getRoomId().equals(room.getRoomId())) {
+            throw new RuntimeException("Reservation " + reservationNo + " is not associated with room " + roomNo);
+        }
+        
+        // Get all advances for this folio
+        List<Advance> advances = advanceRepository.findByFolioNo(checkIn.getFolioNo());
+        
+        return advances.stream()
+            .map(this::mapToAdvanceResponse)
+            .collect(Collectors.toList());
+    }
+
+    /**
      * Get total advances by reservation
      */
     public BigDecimal getTotalAdvancesByReservation(String reservationNo) {
@@ -170,6 +256,32 @@ public class AdvanceService {
         return total != null ? total : BigDecimal.ZERO;
     }
     
+    /**
+     * Get total advances by room number
+     */
+    public BigDecimal getTotalAdvancesByRoom(String roomNo) {
+        // First get the room by room number to get the room ID
+        com.hotelworks.entity.Room room = roomRepository.findByRoomNo(roomNo)
+            .orElseThrow(() -> new RuntimeException("Room not found: " + roomNo));
+        
+        // Get all check-ins for this room
+        List<CheckIn> checkIns = checkInRepository.findByRoomId(room.getRoomId());
+        
+        // Collect all folio numbers from check-ins
+        List<String> folioNos = checkIns.stream()
+            .map(CheckIn::getFolioNo)
+            .filter(folioNo -> folioNo != null && !folioNo.isEmpty())
+            .collect(Collectors.toList());
+        
+        // Get total advances for these folio numbers
+        BigDecimal total = folioNos.stream()
+            .map(folioNo -> advanceRepository.getTotalAdvancesByFolio(folioNo))
+            .filter(amount -> amount != null)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        return total != null ? total : BigDecimal.ZERO;
+    }
+
     /**
      * Get advance summary by reservation number
      */
