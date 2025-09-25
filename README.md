@@ -16,6 +16,7 @@ A comprehensive Spring Boot backend application for hotel management operations 
 - **Shift Management**: Track and update shift balances
 - **Room Status Management**: Real-time room status tracking with color-coded display
 - **User Rights Management**: Role-based access control for different user types
+- **Email Notifications**: Automated email confirmations for reservations, check-ins, and billing with detailed PDF attachments
 
 ### Business Rules
 - Automatic number generation with accounting year format (e.g., 1/25-26, 2/25-26 - sequential)
@@ -195,7 +196,7 @@ http://localhost:8080/api
 ### Sample Request/Response
 
 **Create Reservation Request:**
-```json
+``json
 {
   "guestName": "John Doe",
   "companyId": "COMP001",
@@ -215,7 +216,7 @@ http://localhost:8080/api
 ```
 
 **Response:**
-```json
+``json
 {
   "success": true,
   "message": "Reservation created successfully",
@@ -457,3 +458,26 @@ For support and inquiries:
 - Email: support@hotelworks.com
 - Website: https://hotelworks.com
 - Documentation: http://localhost:8080/swagger-ui.html
+
+## Email Functionality
+
+### Reservation Confirmation Emails
+- Automatically sends detailed confirmation emails with all reservation information
+- Includes responsive HTML template for better user experience
+- Attaches PDF file with complete reservation details including hotel information
+- Triggered automatically on reservation creation or manually via API
+
+### Email API Endpoints
+- `POST /api/reservations/{reservationNo}/send-confirmation` - Send reservation confirmation email with PDF attachment
+
+### Email Configuration
+The system uses SendGrid for email delivery. Configure the following properties in `application.properties`:
+
+```properties
+sendgrid.api.key=your_sendgrid_api_key
+sendgrid.from.email=your_from_email@example.com
+hotel.name=Your Hotel Name
+hotel.address=Your Hotel Address
+hotel.phone=Your Hotel Phone
+hotel.email=Your Hotel Email
+```

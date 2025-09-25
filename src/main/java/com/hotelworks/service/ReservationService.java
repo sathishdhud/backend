@@ -110,12 +110,8 @@ public class ReservationService {
         reservation.setMobileNumber(request.getMobileNumber());
         reservation.setEmailId(request.getEmailId());
         
-        // Handle GST inclusion - if rate includes GST, update it to include CGST and SGST
-        BigDecimal finalRate = request.getRate();
-        if ("Y".equalsIgnoreCase(request.getIncludingGst())) {
-            finalRate = calculateRateWithTaxes(request.getRate());
-        }
-        reservation.setRate(finalRate);
+        // Set rate directly without tax calculation
+        reservation.setRate(request.getRate());
         
         reservation.setIncludingGst(request.getIncludingGst());
         reservation.setRemarks(request.getRemarks());
@@ -138,10 +134,10 @@ public class ReservationService {
         
         // Send email confirmation if email is provided
         if (savedReservation.getEmailId() != null && !savedReservation.getEmailId().isEmpty()) {
-            emailService.sendReservationConfirmation(
+            ReservationResponse response = mapToReservationResponse(savedReservation);
+            emailService.sendDetailedReservationConfirmation(
                 savedReservation.getEmailId(),
-                savedReservation.getGuestName(),
-                savedReservation.getReservationNo()
+                response
             );
         }
         
@@ -177,12 +173,8 @@ public class ReservationService {
         reservation.setMobileNumber(request.getMobileNumber());
         reservation.setEmailId(request.getEmailId());
         
-        // Handle GST inclusion - if rate includes GST, update it to include CGST and SGST
-        BigDecimal finalRate = request.getRate();
-        if ("Y".equalsIgnoreCase(request.getIncludingGst())) {
-            finalRate = calculateRateWithTaxes(request.getRate());
-        }
-        reservation.setRate(finalRate);
+        // Set rate directly without tax calculation
+        reservation.setRate(request.getRate());
         
         reservation.setIncludingGst(request.getIncludingGst());
         reservation.setRemarks(request.getRemarks());
@@ -553,45 +545,20 @@ public class ReservationService {
     }
     
     /**
-     * Calculate rate with taxes (CGST + SGST) when rate includes GST
-     * @param baseRate The base rate before taxes
-     * @return The rate including CGST and SGST
+     * Send reservation confirmation email with attachment
      */
-    private BigDecimal calculateRateWithTaxes(BigDecimal baseRate) {
-        if (baseRate == null || baseRate.compareTo(BigDecimal.ZERO) <= 0) {
-            return baseRate;
+    public boolean sendReservationConfirmationEmail(String reservationNo) {
+        Reservation reservation = reservationRepository.findById(reservationNo)
+            .orElseThrow(() -> new RuntimeException("Reservation not found: " + reservationNo));
+        
+        if (reservation.getEmailId() == null || reservation.getEmailId().isEmpty()) {
+            throw new RuntimeException("No email address provided for reservation: " + reservationNo);
         }
         
-        try {
-            // Get CGST and SGST rates
-            Optional<com.hotelworks.entity.Taxation> cgstTax = taxationRepository.findByTaxName("CGST");
-            Optional<com.hotelworks.entity.Taxation> sgstTax = taxationRepository.findByTaxName("SGST");
-            
-            BigDecimal cgstRate = BigDecimal.ZERO;
-            BigDecimal sgstRate = BigDecimal.ZERO;
-            
-            if (cgstTax.isPresent() && cgstTax.get().getPercentage() != null) {
-                cgstRate = cgstTax.get().getPercentage();
-            }
-            
-            if (sgstTax.isPresent() && sgstTax.get().getPercentage() != null) {
-                sgstRate = sgstTax.get().getPercentage();
-            }
-            
-            // Calculate total tax rate
-            BigDecimal totalTaxRate = cgstRate.add(sgstRate);
-            
-            // Calculate rate including taxes
-            // If rate already includes GST, we need to add the taxes to make it explicit
-            // Rate with taxes = Base Rate * (1 + Total Tax Rate / 100)
-            BigDecimal taxMultiplier = BigDecimal.valueOf(100).add(totalTaxRate)
-                                        .divide(BigDecimal.valueOf(100), 4, BigDecimal.ROUND_HALF_UP);
-            
-            return baseRate.multiply(taxMultiplier).setScale(2, BigDecimal.ROUND_HALF_UP);
-        } catch (Exception e) {
-            // If there's any error in tax calculation, return the original rate
-            System.err.println("Error calculating rate with taxes: " + e.getMessage());
-            return baseRate;
-        }
+        ReservationResponse response = mapToReservationResponse(reservation);
+        return emailService.sendDetailedReservationConfirmation(
+            reservation.getEmailId(),
+            response
+        );
     }
 }

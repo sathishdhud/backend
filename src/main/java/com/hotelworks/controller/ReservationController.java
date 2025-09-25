@@ -228,4 +228,23 @@ public class ReservationController {
                 .body(ApiResponse.error("Failed to update rooms checked-in count: " + e.getMessage()));
         }
     }
+    
+    @PostMapping("/{reservationNo}/send-confirmation")
+    @Operation(summary = "Send reservation confirmation email", description = "Send reservation confirmation email with attachment to guest")
+    public ResponseEntity<ApiResponse<String>> sendReservationConfirmation(
+            @Parameter(description = "Reservation number") @PathVariable String reservationNo) {
+        try {
+            boolean sent = reservationService.sendReservationConfirmationEmail(reservationNo);
+            if (sent) {
+                return ResponseEntity.ok(ApiResponse.success("Reservation confirmation email sent successfully"));
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to send reservation confirmation email"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Failed to send reservation confirmation email: " + e.getMessage()));
+        }
+    }
+
 }
