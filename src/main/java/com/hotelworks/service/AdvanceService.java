@@ -453,6 +453,16 @@ public class AdvanceService {
         return checkIn.getGuestName();
     }
 
+    /**
+     * Get all advances
+     */
+    public List<AdvanceResponse> getAllAdvances() {
+        List<Advance> advances = advanceRepository.findAll();
+        return advances.stream()
+            .map(this::mapToAdvanceResponse)
+            .collect(Collectors.toList());
+    }
+
     private Advance createAdvanceEntity(AdvanceRequest request) {
         Advance advance = new Advance();
         advance.setReceiptNo(numberGenerationService.generateReceiptNumber());

@@ -339,6 +339,18 @@ public class AdvanceController {
         }
     }
 
+    @GetMapping
+    @Operation(summary = "Get all advances", description = "Get all advance payments")
+    public ResponseEntity<ApiResponse<List<AdvanceResponse>>> getAllAdvances() {
+        try {
+            List<AdvanceResponse> responses = advanceService.getAllAdvances();
+            return ResponseEntity.ok(ApiResponse.success(responses));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Failed to get advances: " + e.getMessage()));
+        }
+    }
+
     @PostMapping("/room/{roomNo}")
     @Operation(summary = "Create advance for room", description = "Create advance payment for a specific room number")
     public ResponseEntity<ApiResponse<AdvanceResponse>> createAdvanceForRoom(
