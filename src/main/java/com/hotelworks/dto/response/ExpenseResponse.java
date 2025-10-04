@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 public class ExpenseResponse {
     
+    private String transactionId;
     private String voucherNo;
     private LocalDate date;
     private String accountHeadId;
@@ -18,6 +19,9 @@ public class ExpenseResponse {
     public ExpenseResponse() {}
     
     // Getters and Setters
+    public String getTransactionId() { return transactionId; }
+    public void setTransactionId(String transactionId) { this.transactionId = transactionId; }
+    
     public String getVoucherNo() { return voucherNo; }
     public void setVoucherNo(String voucherNo) { this.voucherNo = voucherNo; }
     

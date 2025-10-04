@@ -311,11 +311,13 @@ http://localhost:8080/api/checkins
 
 **Endpoint:** `PUT /{folioNo}`
 
-**Description:** Update check-in information (departure date, rate, remarks, ID proofs, and additional details)
+**Description:** Update check-in information (guest name, departure date, rate, remarks, ID proofs, and additional details)
 
 **Request Body:**
 ```json
 {
+  "guestName": "John Smith",
+  "includingGst": "N",
   "departureDate": "2025-09-24",
   "rate": 3000.00,
   "remarks": "Extended stay requested",
@@ -345,7 +347,7 @@ http://localhost:8080/api/checkins
   "data": {
     "folioNo": "FOL20250921001",
     "reservationNo": "RES20250921001",
-    "guestName": "John Doe",
+    "guestName": "John Smith",
     "roomId": "RM101",
     "roomNo": "101",
     "arrivalDate": "2025-09-21",
@@ -356,6 +358,7 @@ http://localhost:8080/api/checkins
     "remarks": "Extended stay requested",
     "auditDate": "2025-09-21",
     "walkIn": "N",
+    "includingGst": "N",
     "totalAdvances": 500.00,
     "idProof1": "Passport: P12345678",
     "idProof2": "Driving License: DL987654321",

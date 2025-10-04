@@ -310,8 +310,11 @@ public class ReservationService {
             throw new RuntimeException("Ref mode not found: " + request.getRefModeId());
         }
         
-        if (request.getResvSourceId() != null && !resvSourceRepository.existsById(request.getResvSourceId())) {
-            throw new RuntimeException("Reservation source not found: " + request.getResvSourceId());
+        // Only validate reservation source if it's provided
+        if (request.getResvSourceId() != null && !request.getResvSourceId().trim().isEmpty()) {
+            if (!resvSourceRepository.existsById(request.getResvSourceId())) {
+                throw new RuntimeException("Reservation source not found: " + request.getResvSourceId());
+            }
         }
     }
     
@@ -428,8 +431,13 @@ public class ReservationService {
         }
         
         if (reservation.getResvSourceId() != null) {
-            resvSourceRepository.findById(reservation.getResvSourceId())
-                .ifPresent(resvSource -> response.setResvSourceName(resvSource.getResvSource()));
+            try {
+                resvSourceRepository.findById(reservation.getResvSourceId())
+                    .ifPresent(resvSource -> response.setResvSourceName(resvSource.getResvSource()));
+            } catch (Exception e) {
+                // Log the exception but don't fail the entire operation
+                System.err.println("Warning: Error fetching reservation source name for ID: " + reservation.getResvSourceId() + ", Error: " + e.getMessage());
+            }
         }
         
         return response;

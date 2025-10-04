@@ -129,4 +129,9 @@ public class ReservationRequest {
     
     public String getResvSourceId() { return resvSourceId; }
     public void setResvSourceId(String resvSourceId) { this.resvSourceId = resvSourceId; }
+    
+    // Backward compatibility setter - handles reservationSourceId field
+    public void setReservationSourceId(String reservationSourceId) { 
+        this.resvSourceId = reservationSourceId; 
+    }
 }

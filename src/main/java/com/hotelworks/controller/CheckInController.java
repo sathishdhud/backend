@@ -105,7 +105,7 @@ public class CheckInController {
     }
     
     @PutMapping("/{folioNo}")
-    @Operation(summary = "Update check-in details", description = "Update check-in information (departure date, rate, remarks)")
+    @Operation(summary = "Update check-in details", description = "Update check-in information (guest name, departure date, rate, remarks)")
     public ResponseEntity<ApiResponse<CheckInResponse>> updateCheckIn(
             @Parameter(description = "Folio number") @PathVariable String folioNo,
             @Valid @RequestBody CheckInRequest request) {

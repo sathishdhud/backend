@@ -32,6 +32,9 @@ public class CheckInRequest {
     @NotNull(message = "Walk-in flag is required")
     private String walkIn; // Y/N
     
+    // GST field (newly added)
+    private String includingGst; // Y/N
+    
     // ID Proof fields (newly added)
     private String idProof1;
     private String idProof2;
@@ -47,6 +50,10 @@ public class CheckInRequest {
     private String nationalityId;
     private String refModeId;
     private String resvSourceId;
+    
+    @jakarta.validation.constraints.Min(value = 1, message = "Number of persons must be at least 1")
+    @jakarta.validation.constraints.Max(value = 20, message = "Number of persons cannot exceed 20")
+    private Integer noOfPersons;
     
     // Constructors
     public CheckInRequest() {}
@@ -81,6 +88,10 @@ public class CheckInRequest {
     
     public String getWalkIn() { return walkIn; }
     public void setWalkIn(String walkIn) { this.walkIn = walkIn; }
+    
+    // GST getters and setters (newly added)
+    public String getIncludingGst() { return includingGst; }
+    public void setIncludingGst(String includingGst) { this.includingGst = includingGst; }
     
     // ID Proof getters and setters (newly added)
     public String getIdProof1() { return idProof1; }
@@ -119,4 +130,7 @@ public class CheckInRequest {
     
     public String getResvSourceId() { return resvSourceId; }
     public void setResvSourceId(String resvSourceId) { this.resvSourceId = resvSourceId; }
+    
+    public Integer getNoOfPersons() { return noOfPersons; }
+    public void setNoOfPersons(Integer noOfPersons) { this.noOfPersons = noOfPersons; }
 }

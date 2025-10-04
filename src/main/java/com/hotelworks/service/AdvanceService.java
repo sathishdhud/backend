@@ -58,12 +58,14 @@ public class AdvanceService {
             throw new RuntimeException("Reservation number is required for reservation advance");
         }
         
-        if (!reservationRepository.existsById(request.getReservationNo())) {
-            throw new RuntimeException("Reservation not found: " + request.getReservationNo());
+        // Find the exact reservation number using a more flexible search
+        String exactReservationNo = findExactReservationNumber(request.getReservationNo());
+        if (exactReservationNo == null) {
+            throw new RuntimeException("Reservation not found: " + request.getReservationNo() + ". Please enter a valid reservation number.");
         }
         
         Advance advance = createAdvanceEntity(request);
-        advance.setReservationNo(request.getReservationNo());
+        advance.setReservationNo(exactReservationNo);
         
         Advance savedAdvance = advanceRepository.save(advance);
         return mapToAdvanceResponse(savedAdvance);
@@ -155,7 +157,13 @@ public class AdvanceService {
      * Get advances by reservation number
      */
     public List<AdvanceResponse> getAdvancesByReservation(String reservationNo) {
-        List<Advance> advances = advanceRepository.findByReservationNo(reservationNo);
+        // Find the exact reservation number using a more flexible search
+        String exactReservationNo = findExactReservationNumber(reservationNo);
+        if (exactReservationNo == null) {
+            throw new RuntimeException("Reservation not found: " + reservationNo);
+        }
+        
+        List<Advance> advances = advanceRepository.findByReservationNo(exactReservationNo);
         return advances.stream()
             .map(this::mapToAdvanceResponse)
             .collect(Collectors.toList());
@@ -212,16 +220,22 @@ public class AdvanceService {
      * Get advances by reservation number and room number
      */
     public List<AdvanceResponse> getAdvancesByReservationAndRoom(String reservationNo, String roomNo) {
+        // Find the exact reservation number using a more flexible search
+        String exactReservationNo = findExactReservationNumber(reservationNo);
+        if (exactReservationNo == null) {
+            throw new RuntimeException("Reservation not found: " + reservationNo);
+        }
+        
         // First get the room by room number to get the room ID
         com.hotelworks.entity.Room room = roomRepository.findByRoomNo(roomNo)
             .orElseThrow(() -> new RuntimeException("Room not found: " + roomNo));
         
         // Get check-in for this reservation and room
-        CheckIn checkIn = checkInRepository.findByReservationNo(reservationNo)
-            .orElseThrow(() -> new RuntimeException("Check-in not found for reservation: " + reservationNo));
+        CheckIn checkIn = checkInRepository.findByReservationNo(exactReservationNo)
+            .orElseThrow(() -> new RuntimeException("Check-in not found for reservation: " + exactReservationNo));
         
         if (!checkIn.getRoomId().equals(room.getRoomId())) {
-            throw new RuntimeException("Reservation " + reservationNo + " is not associated with room " + roomNo);
+            throw new RuntimeException("Reservation " + exactReservationNo + " is not associated with room " + roomNo);
         }
         
         // Get all advances for this folio
@@ -236,7 +250,13 @@ public class AdvanceService {
      * Get total advances by reservation
      */
     public BigDecimal getTotalAdvancesByReservation(String reservationNo) {
-        BigDecimal total = advanceRepository.getTotalAdvancesByReservation(reservationNo);
+        // Find the exact reservation number using a more flexible search
+        String exactReservationNo = findExactReservationNumber(reservationNo);
+        if (exactReservationNo == null) {
+            throw new RuntimeException("Reservation not found: " + reservationNo);
+        }
+        
+        BigDecimal total = advanceRepository.getTotalAdvancesByReservation(exactReservationNo);
         return total != null ? total : BigDecimal.ZERO;
     }
     
@@ -286,22 +306,28 @@ public class AdvanceService {
      * Get advance summary by reservation number
      */
     public AdvanceSummaryResponse getAdvanceSummaryByReservation(String reservationNo) {
+        // Find the exact reservation number using a more flexible search
+        String exactReservationNo = findExactReservationNumber(reservationNo);
+        if (exactReservationNo == null) {
+            throw new RuntimeException("Reservation not found: " + reservationNo);
+        }
+        
         // Validate reservation exists
-        Reservation reservation = reservationRepository.findById(reservationNo)
-            .orElseThrow(() -> new RuntimeException("Reservation not found: " + reservationNo));
+        Reservation reservation = reservationRepository.findById(exactReservationNo)
+            .orElseThrow(() -> new RuntimeException("Reservation not found: " + exactReservationNo));
         
         // Get all advances for this reservation
-        List<Advance> advances = advanceRepository.findByReservationNo(reservationNo);
+        List<Advance> advances = advanceRepository.findByReservationNo(exactReservationNo);
         
         // Create summary response
         AdvanceSummaryResponse summary = new AdvanceSummaryResponse();
-        summary.setReferenceNumber(reservationNo);
+        summary.setReferenceNumber(exactReservationNo);
         summary.setGuestName(reservation.getGuestName());
         summary.setArrivalDate(reservation.getArrivalDate());
         summary.setDepartureDate(reservation.getDepartureDate());
         
         // Try to get room information from check-in if exists
-        checkInRepository.findByReservationNo(reservationNo).ifPresent(checkIn -> {
+        checkInRepository.findByReservationNo(exactReservationNo).ifPresent(checkIn -> {
             if (checkIn.getRoomId() != null) {
                 roomRepository.findById(checkIn.getRoomId()).ifPresent(room -> {
                     summary.setRoomNo(room.getRoomNo());
@@ -439,8 +465,14 @@ public class AdvanceService {
      * Get guest name by reservation number
      */
     public String getGuestNameByReservation(String reservationNo) {
-        Reservation reservation = reservationRepository.findById(reservationNo)
-            .orElseThrow(() -> new RuntimeException("Reservation not found: " + reservationNo));
+        // Find the exact reservation number using a more flexible search
+        String exactReservationNo = findExactReservationNumber(reservationNo);
+        if (exactReservationNo == null) {
+            throw new RuntimeException("Reservation not found: " + reservationNo);
+        }
+        
+        Reservation reservation = reservationRepository.findById(exactReservationNo)
+            .orElseThrow(() -> new RuntimeException("Reservation not found: " + exactReservationNo));
         return reservation.getGuestName();
     }
     
@@ -546,6 +578,52 @@ public class AdvanceService {
         }
         
         return detail;
+    }
+    
+    /**
+     * Find exact reservation number by searching with partial match
+     * This allows users to enter reservation numbers in various formats
+     */
+    private String findExactReservationNumber(String partialReservationNo) {
+        // First try exact match
+        if (reservationRepository.existsById(partialReservationNo)) {
+            return partialReservationNo;
+        }
+        
+        // If exact match fails, try to find by partial match
+        // Remove common prefixes that users might add
+        String cleanedReservationNo = partialReservationNo;
+        if (cleanedReservationNo.startsWith("R")) {
+            cleanedReservationNo = cleanedReservationNo.substring(1);
+        }
+        
+        // Try to find reservation with cleaned number
+        if (reservationRepository.existsById(cleanedReservationNo)) {
+            return cleanedReservationNo;
+        }
+        
+        // Try with common prefixes
+        String[] prefixes = {"R", ""};
+        String[] suffixes = {"", "-25-26", "-24-25", "-23-24"}; // Common accounting year formats
+        
+        for (String prefix : prefixes) {
+            for (String suffix : suffixes) {
+                String possibleReservationNo = prefix + cleanedReservationNo + suffix;
+                if (reservationRepository.existsById(possibleReservationNo)) {
+                    return possibleReservationNo;
+                }
+            }
+        }
+        
+        // If still not found, try searching with the repository search method
+        List<Reservation> reservations = reservationRepository.searchReservations(cleanedReservationNo);
+        if (!reservations.isEmpty()) {
+            // Return the first match
+            return reservations.get(0).getReservationNo();
+        }
+        
+        // Not found
+        return null;
     }
 
 }

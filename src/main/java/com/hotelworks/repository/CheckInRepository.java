@@ -40,6 +40,9 @@ public interface CheckInRepository extends JpaRepository<CheckIn, String> {
     
     boolean existsByRoomId(String roomId);
     
+    // Find all check-ins associated with a reservation number
+    List<CheckIn> findAllByReservationNo(String reservationNo);
+    
     // Find overlapping stays for room availability checking
     @Query("SELECT c FROM CheckIn c WHERE c.roomId = :roomId AND " +
            "((c.arrivalDate <= :departureDate AND c.departureDate >= :arrivalDate))")

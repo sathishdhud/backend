@@ -1,193 +1,230 @@
 # Transaction Management API Documentation
 
-This document provides detailed information about the Transaction Management APIs, including endpoints for managing expenses and sales receipts.
+## Overview
+This API provides endpoints for managing expense transactions and sales receipts in the hotel management system. Transactions can be associated with rooms, bills, and folios for better tracking and reporting.
 
 ## Base URL
 ```
-http://localhost:8080/api/transactions
+/api/transactions
 ```
 
-## Endpoints
+## Authentication
+All endpoints require authentication with either ADMIN or USER role.
 
-### 1. Create Expense
+## Expense Transactions
 
-**Endpoint:** `POST /expenses`
+### Create Expense
+**POST** `/api/transactions/expenses`
 
-**Description:** Create a new expense transaction with shift information
+Create a new expense transaction that can be associated with a room, bill, or folio.
 
-**Request Body:**
+#### Request Body
 ```json
 {
-  "voucherNo": "EXP20250921001",
-  "date": "2025-09-21",
-  "accountHeadId": "OFFICE_SUPPLIES",
+  "voucherNo": "EXP-2023-001",
+  "date": "2023-06-15",
+  "accountHeadId": "ACC001",
   "amount": 1500.00,
   "narration": "Office supplies purchase",
   "shiftNo": "1",
-  "shiftDate": "2025-09-21"
+  "shiftDate": "2023-06-15",
+  "roomNo": "101",           // Optional: Associate with room
+  "billNo": "B1-23-24",      // Optional: Associate with bill
+  "folioNo": "F1-23-24",     // Optional: Associate with folio
+  "guestName": "John Smith"  // Optional: Guest name
 }
 ```
 
-**Response:**
+#### Response
 ```json
 {
   "success": true,
-  "message": "Expense created successfully",
+  "message": "Operation successful",
   "data": {
-    "voucherNo": "EXP20250921001",
-    "date": "2025-09-21",
-    "accountHeadId": "OFFICE_SUPPLIES",
+    "voucherNo": "EXP-2023-001",
+    "date": "2023-06-15",
+    "accountHeadId": "ACC001",
     "accountHeadName": "Office Supplies",
     "amount": 1500.00,
     "narration": "Office supplies purchase",
     "shiftNo": "1",
-    "shiftDate": "2025-09-21"
-  },
-  "timestamp": "2025-09-21T10:30:00"
+    "shiftDate": "2023-06-15"
+  }
 }
 ```
 
-### 2. Create Sales Receipt
+### Get All Expenses
+**GET** `/api/transactions/expenses`
 
-**Endpoint:** `POST /sales-receipts`
+Retrieve all expense transactions.
 
-**Description:** Create a new sales receipt with shift information
-
-**Request Body:**
-```json
-{
-  "receiptNo": "REC20250921001",
-  "date": "2025-09-21",
-  "modeOfPaymentId": "CASH",
-  "amount": 2500.00,
-  "voucherNo": "V20250921001",
-  "narration": "Room payment",
-  "shiftNo": "1",
-  "shiftDate": "2025-09-21"
-}
-```
-
-**Response:**
+#### Response
 ```json
 {
   "success": true,
-  "message": "Sales receipt created successfully",
-  "data": {
-    "receiptNo": "REC20250921001",
-    "date": "2025-09-21",
-    "modeOfPaymentId": "CASH",
-    "modeOfPaymentName": "Cash",
-    "amount": 2500.00,
-    "voucherNo": "V20250921001",
-    "narration": "Room payment",
-    "shiftNo": "1",
-    "shiftDate": "2025-09-21"
-  },
-  "timestamp": "2025-09-21T10:30:00"
-}
-```
-
-### 3. Get All Expenses
-
-**Endpoint:** `GET /expenses`
-
-**Description:** Retrieve all expense transactions
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Expenses retrieved successfully",
+  "message": "Operation successful",
   "data": [
     {
-      "voucherNo": "EXP20250921001",
-      "date": "2025-09-21",
-      "accountHeadId": "OFFICE_SUPPLIES",
+      "voucherNo": "EXP-2023-001",
+      "date": "2023-06-15",
+      "accountHeadId": "ACC001",
       "accountHeadName": "Office Supplies",
       "amount": 1500.00,
       "narration": "Office supplies purchase",
       "shiftNo": "1",
-      "shiftDate": "2025-09-21"
+      "shiftDate": "2023-06-15"
     }
-  ],
-  "timestamp": "2025-09-21T10:30:00"
+  ]
 }
 ```
 
-### 4. Get All Sales Receipts
+### Get Expenses by Room Number
+**GET** `/api/transactions/expenses/room/{roomNo}`
 
-**Endpoint:** `GET /sales-receipts`
+Retrieve all expense transactions for a specific room.
 
-**Description:** Retrieve all sales receipts
-
-**Response:**
+#### Response
 ```json
 {
   "success": true,
-  "message": "Sales receipts retrieved successfully",
+  "message": "Operation successful",
   "data": [
     {
-      "receiptNo": "REC20250921001",
-      "date": "2025-09-21",
-      "modeOfPaymentId": "CASH",
-      "modeOfPaymentName": "Cash",
+      "voucherNo": "EXP-2023-001",
+      "date": "2023-06-15",
+      "accountHeadId": "ACC001",
+      "accountHeadName": "Maintenance",
       "amount": 2500.00,
-      "voucherNo": "V20250921001",
-      "narration": "Room payment",
+      "narration": "Room 101 maintenance",
       "shiftNo": "1",
-      "shiftDate": "2025-09-21"
+      "shiftDate": "2023-06-15"
     }
-  ],
-  "timestamp": "2025-09-21T10:30:00"
+  ]
 }
 ```
 
-## Data Models
+### Get Expenses by Bill Number
+**GET** `/api/transactions/expenses/bill/{billNo}`
 
-### Expense Request
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| voucherNo | String | Yes | Unique voucher number |
-| date | Date | Yes | Transaction date |
-| accountHeadId | String | Yes | Account head identifier |
-| amount | BigDecimal | Yes | Transaction amount |
-| narration | String | No | Description of the transaction |
-| shiftNo | String | Yes | Shift number |
-| shiftDate | Date | Yes | Shift date |
+Retrieve all expense transactions for a specific bill.
 
-### Sales Receipt Request
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| receiptNo | String | Yes | Unique receipt number |
-| date | Date | Yes | Receipt date |
-| modeOfPaymentId | String | Yes | Mode of payment identifier |
-| amount | BigDecimal | Yes | Receipt amount |
-| voucherNo | String | No | Associated voucher number |
-| narration | String | No | Description of the receipt |
-| shiftNo | String | Yes | Shift number |
-| shiftDate | Date | Yes | Shift date |
+#### Response
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": [
+    {
+      "voucherNo": "EXP-2023-002",
+      "date": "2023-06-15",
+      "accountHeadId": "ACC002",
+      "accountHeadName": "Laundry Service",
+      "amount": 1200.00,
+      "narration": "Laundry for bill B1-23-24",
+      "shiftNo": "1",
+      "shiftDate": "2023-06-15"
+    }
+  ]
+}
+```
 
-### Expense Response
-| Field | Type | Description |
-|-------|------|-------------|
-| voucherNo | String | Unique voucher number |
-| date | Date | Transaction date |
-| accountHeadId | String | Account head identifier |
-| accountHeadName | String | Account head name |
-| amount | BigDecimal | Transaction amount |
-| narration | String | Description of the transaction |
-| shiftNo | String | Shift number |
-| shiftDate | Date | Shift date |
+### Get Expenses by Folio Number
+**GET** `/api/transactions/expenses/folio/{folioNo}`
 
-### Sales Receipt Response
-| Field | Type | Description |
-|-------|------|-------------|
-| receiptNo | String | Unique receipt number |
-| date | Date | Receipt date |
-| modeOfPaymentId | String | Mode of payment identifier |
-| modeOfPaymentName | String | Mode of payment name |
-| amount | BigDecimal | Receipt amount |
-| voucherNo | String | Associated voucher number |
-| narration | String | Description of the receipt |
-| shiftNo | String | Shift number |
-| shiftDate | Date | Shift date |
+Retrieve all expense transactions for a specific folio.
+
+#### Response
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": [
+    {
+      "voucherNo": "EXP-2023-003",
+      "date": "2023-06-15",
+      "accountHeadId": "ACC003",
+      "accountHeadName": "Restaurant",
+      "amount": 3500.00,
+      "narration": "Dinner charge for folio F1-23-24",
+      "shiftNo": "1",
+      "shiftDate": "2023-06-15"
+    }
+  ]
+}
+```
+
+## Sales Receipts
+
+### Create Sales Receipt
+**POST** `/api/transactions/sales-receipts`
+
+Create a new sales receipt.
+
+#### Request Body
+```json
+{
+  "receiptNo": "REC-2023-001",
+  "date": "2023-06-15",
+  "modeOfPaymentId": "CASH",
+  "amount": 5000.00,
+  "voucherNo": "V-2023-001",
+  "narration": "Payment for services",
+  "shiftNo": "1",
+  "shiftDate": "2023-06-15"
+}
+```
+
+#### Response
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": {
+    "receiptNo": "REC-2023-001",
+    "date": "2023-06-15",
+    "modeOfPaymentId": "CASH",
+    "modeOfPaymentName": "Cash",
+    "amount": 5000.00,
+    "voucherNo": "V-2023-001",
+    "narration": "Payment for services",
+    "shiftNo": "1",
+    "shiftDate": "2023-06-15"
+  }
+}
+```
+
+### Get All Sales Receipts
+**GET** `/api/transactions/sales-receipts`
+
+Retrieve all sales receipts.
+
+#### Response
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": [
+    {
+      "receiptNo": "REC-2023-001",
+      "date": "2023-06-15",
+      "modeOfPaymentId": "CASH",
+      "modeOfPaymentName": "Cash",
+      "amount": 5000.00,
+      "voucherNo": "V-2023-001",
+      "narration": "Payment for services",
+      "shiftNo": "1",
+      "shiftDate": "2023-06-15"
+    }
+  ]
+}
+```
+
+## Error Responses
+All endpoints return error responses in the following format when an error occurs:
+
+```json
+{
+  "success": false,
+  "message": "Failed to create expense: Room not found: 999"
+}
+```

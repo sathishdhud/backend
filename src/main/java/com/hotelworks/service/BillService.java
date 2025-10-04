@@ -138,6 +138,10 @@ public class BillService {
             }
         }
         
+        // Update check-in checkout status to true when bill is generated
+        checkIn.setCheckout(true);
+        checkInRepository.save(checkIn);
+        
         // Send email confirmation if email is provided
         if (checkIn.getEmailId() != null && !checkIn.getEmailId().isEmpty()) {
             emailService.sendBillConfirmation(
@@ -697,6 +701,143 @@ public class BillService {
             // Get payment mode name
             billSettlementTypeRepository.findById(request.getModeOfPaymentId())
                 .ifPresent(paymentMode -> response.setModeOfPaymentName(paymentMode.getName()));
+        }
+        
+        return response;
+    }
+    
+    /**
+     * Get all bills associated with a reservation number
+     */
+    public List<BillResponse> getBillsByReservation(String reservationNo) {
+        // Find all check-ins associated with this reservation
+        List<CheckIn> checkIns = checkInRepository.findAllByReservationNo(reservationNo);
+        
+        List<BillResponse> billResponses = new ArrayList<>();
+        
+        // For each check-in, find the associated bill
+        for (CheckIn checkIn : checkIns) {
+            try {
+                BillResponse billResponse = getBillByFolio(checkIn.getFolioNo());
+                billResponses.add(billResponse);
+            } catch (Exception e) {
+                // If no bill exists for this folio, continue to the next one
+                System.out.println("No bill found for folio: " + checkIn.getFolioNo());
+            }
+        }
+        
+        return billResponses;
+    }
+    
+    /**
+     * Send bill confirmation emails for all bills associated with a reservation number
+     */
+    public boolean sendBillConfirmationEmailsByReservation(String reservationNo) {
+        try {
+            // Get all bills for this reservation
+            List<BillResponse> bills = getBillsByReservation(reservationNo);
+            
+            boolean allSent = true;
+            
+            // Send email for each bill
+            for (BillResponse bill : bills) {
+                try {
+                    // Find the check-in to get the email address
+                    CheckIn checkIn = checkInRepository.findById(bill.getFolioNo())
+                        .orElse(null);
+                    
+                    if (checkIn != null && checkIn.getEmailId() != null && !checkIn.getEmailId().isEmpty()) {
+                        emailService.sendBillConfirmation(
+                            checkIn.getEmailId(),
+                            checkIn.getGuestName(),
+                            bill.getBillNo(),
+                            bill.getTotalAmount().toString()
+                        );
+                    }
+                } catch (Exception e) {
+                    System.err.println("Failed to send email for bill " + bill.getBillNo() + ": " + e.getMessage());
+                    allSent = false;
+                }
+            }
+            
+            return allSent;
+        } catch (Exception e) {
+            System.err.println("Failed to send bill confirmation emails for reservation " + reservationNo + ": " + e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get all transactions for a guest by bill number
+     */
+    public List<PostTransactionResponse> getTransactionsByGuestFromBill(String billNo) {
+        // First, get the bill to retrieve the guest name
+        FoBill bill = foBillRepository.findById(billNo)
+            .orElseThrow(() -> new RuntimeException("Bill not found: " + billNo));
+        
+        // Get the guest name from the bill
+        String guestName = bill.getGuestName();
+        
+        // Fetch all transactions for this guest name
+        List<PostTransaction> transactions = postTransactionRepository.findByGuestName(guestName);
+        
+        // Convert to response DTOs
+        return transactions.stream()
+            .map(this::mapToPostTransactionResponse)
+            .collect(java.util.stream.Collectors.toList());
+    }
+    
+    /**
+     * Get all transactions for a guest by bill number along with the bill details
+     */
+    public BillWithTransactionsResponse getBillWithTransactionsByGuest(String billNo) {
+        // First, get the bill to retrieve the guest name
+        FoBill bill = foBillRepository.findById(billNo)
+            .orElseThrow(() -> new RuntimeException("Bill not found: " + billNo));
+        
+        // Get the guest name from the bill
+        String guestName = bill.getGuestName();
+        
+        // Fetch all transactions for this guest name
+        List<PostTransaction> transactions = postTransactionRepository.findByGuestName(guestName);
+        
+        // Convert transactions to response DTOs
+        List<PostTransactionResponse> transactionResponses = transactions.stream()
+            .map(this::mapToPostTransactionResponse)
+            .collect(java.util.stream.Collectors.toList());
+        
+        // Convert bill to response DTO
+        BillResponse billResponse = mapToBillResponse(bill);
+        
+        // Return both bill and transactions
+        return new BillWithTransactionsResponse(billResponse, transactionResponses);
+    }
+    
+    /**
+     * Map PostTransaction entity to PostTransactionResponse DTO
+     */
+    private PostTransactionResponse mapToPostTransactionResponse(PostTransaction transaction) {
+        PostTransactionResponse response = new PostTransactionResponse();
+        response.setTransactionId(transaction.getTransactionId());
+        response.setFolioNo(transaction.getFolioNo());
+        response.setBillNo(transaction.getBillNo());
+        response.setRoomId(transaction.getRoomId());
+        response.setGuestName(transaction.getGuestName());
+        response.setDate(transaction.getDate());
+        response.setAuditDate(transaction.getAuditDate());
+        response.setAccHeadId(transaction.getAccHeadId());
+        response.setVoucherNo(transaction.getVoucherNo());
+        response.setAmount(transaction.getAmount());
+        response.setNarration(transaction.getNarration());
+        
+        // Set room number if room is available
+        if (transaction.getRoom() != null) {
+            response.setRoomNo(transaction.getRoom().getRoomNo());
+        }
+        
+        // Set account head name if account head is available
+        if (transaction.getHotelAccountHead() != null) {
+            response.setAccHeadName(transaction.getHotelAccountHead().getName());
         }
         
         return response;

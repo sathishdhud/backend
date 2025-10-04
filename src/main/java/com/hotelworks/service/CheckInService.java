@@ -101,6 +101,14 @@ public class CheckInService {
         checkIn.setAuditDate(LocalDate.now());
         checkIn.setWalkIn(request.getWalkIn());
         
+        // Set GST field (newly added)
+        if (request.getIncludingGst() != null && !request.getIncludingGst().trim().isEmpty()) {
+            checkIn.setIncludingGst(request.getIncludingGst());
+        } else {
+            // Default to "N" if not provided
+            checkIn.setIncludingGst("N");
+        }
+        
         // Set ID proof fields
         checkIn.setIdProof1(request.getIdProof1());
         checkIn.setIdProof2(request.getIdProof2());
@@ -145,6 +153,12 @@ public class CheckInService {
         if (request.getResvSourceId() != null && !request.getResvSourceId().trim().isEmpty()) {
             checkIn.setResvSourceId(request.getResvSourceId());
         }
+        
+        // Set number of persons
+        checkIn.setNoOfPersons(request.getNoOfPersons());
+        
+        // Set checkout to false by default when creating check-in
+        checkIn.setCheckout(false);
         
         // Save check-in
         CheckIn savedCheckIn = checkInRepository.save(checkIn);
@@ -241,6 +255,16 @@ public class CheckInService {
             checkIn.setDepartureDate(request.getDepartureDate());
         }
         
+        // Update guest name if provided
+        if (request.getGuestName() != null && !request.getGuestName().trim().isEmpty()) {
+            checkIn.setGuestName(request.getGuestName());
+        }
+        
+        // Update GST field if provided
+        if (request.getIncludingGst() != null) {
+            checkIn.setIncludingGst(request.getIncludingGst());
+        }
+        
         // Update other fields if provided
         if (request.getRate() != null) {
             checkIn.setRate(request.getRate());
@@ -311,6 +335,11 @@ public class CheckInService {
             checkIn.setResvSourceId(request.getResvSourceId());
         }
         
+        // Update number of persons if provided
+        if (request.getNoOfPersons() != null) {
+            checkIn.setNoOfPersons(request.getNoOfPersons());
+        }
+        
         CheckIn savedCheckIn = checkInRepository.save(checkIn);
         return mapToCheckInResponse(savedCheckIn);
     }
@@ -351,6 +380,16 @@ public class CheckInService {
         // Validate arrival date is not in the past
         if (request.getArrivalDate().isBefore(LocalDate.now())) {
             throw new RuntimeException("Arrival date cannot be in the past");
+        }
+        
+        // Validate number of persons
+        if (request.getNoOfPersons() != null) {
+            if (request.getNoOfPersons() < 1) {
+                throw new RuntimeException("Number of persons must be at least 1");
+            }
+            if (request.getNoOfPersons() > 20) {
+                throw new RuntimeException("Number of persons cannot exceed 20");
+            }
         }
         
         // Validate foreign key relationships if provided
@@ -488,6 +527,16 @@ public class CheckInService {
             if (request.getResvSourceId() == null) {
                 request.setResvSourceId(reservation.getResvSourceId());
             }
+            
+            // Auto-populate number of persons if not provided
+            if (request.getNoOfPersons() == null) {
+                request.setNoOfPersons(reservation.getNoOfPersons());
+            }
+            
+            // Auto-populate GST field if not provided
+            if (request.getIncludingGst() == null) {
+                request.setIncludingGst(reservation.getIncludingGst());
+            }
         }
     }
     
@@ -506,6 +555,9 @@ public class CheckInService {
         response.setAuditDate(checkIn.getAuditDate());
         response.setWalkIn(checkIn.getWalkIn());
         
+        // Set GST field (newly added)
+        response.setIncludingGst(checkIn.getIncludingGst());
+        
         // Set ID proof fields
         response.setIdProof1(checkIn.getIdProof1());
         response.setIdProof2(checkIn.getIdProof2());
@@ -521,6 +573,8 @@ public class CheckInService {
         response.setNationalityId(checkIn.getNationalityId());
         response.setRefModeId(checkIn.getRefModeId());
         response.setResvSourceId(checkIn.getResvSourceId());
+        response.setNoOfPersons(checkIn.getNoOfPersons());
+        response.setCheckout(checkIn.getCheckout());
         
         // Set room number by fetching from repository (consistent pattern)
         if (checkIn.getRoomId() != null) {

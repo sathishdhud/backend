@@ -4,6 +4,7 @@ import com.hotelworks.dto.request.SplitBillRequest;
 import com.hotelworks.dto.request.BillSettlementRequest;
 import com.hotelworks.dto.request.BillUpdateRequest;
 import com.hotelworks.dto.response.*;
+import com.hotelworks.entity.PostTransaction;
 import com.hotelworks.service.BillService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -78,6 +79,37 @@ public class BillController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error("Bill not found for folio: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/reservation/{reservationNo}")
+    @Operation(summary = "Get bills by reservation", description = "Retrieve all bills associated with a reservation number")
+    public ResponseEntity<ApiResponse<List<BillResponse>>> getBillsByReservation(
+            @Parameter(description = "Reservation number") @PathVariable String reservationNo) {
+        try {
+            List<BillResponse> responses = billService.getBillsByReservation(reservationNo);
+            return ResponseEntity.ok(ApiResponse.success(responses));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("Bills not found for reservation: " + e.getMessage()));
+        }
+    }
+    
+    @PostMapping("/reservation/{reservationNo}/send-email")
+    @Operation(summary = "Send bill emails by reservation", description = "Send bill confirmation emails for all bills associated with a reservation number")
+    public ResponseEntity<ApiResponse<String>> sendBillEmailsByReservation(
+            @Parameter(description = "Reservation number") @PathVariable String reservationNo) {
+        try {
+            boolean result = billService.sendBillConfirmationEmailsByReservation(reservationNo);
+            if (result) {
+                return ResponseEntity.ok(ApiResponse.success("Bill confirmation emails sent successfully"));
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to send some bill confirmation emails"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Failed to send bill confirmation emails: " + e.getMessage()));
         }
     }
     
@@ -181,6 +213,19 @@ public class BillController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Error retrieving pending settlements: " + e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/{billNo}/transactions-by-guest")
+    @Operation(summary = "Get bill and all transactions by guest name", description = "Get the bill details and all transactions for the guest associated with the specified bill number")
+    public ResponseEntity<ApiResponse<BillWithTransactionsResponse>> getBillWithTransactionsByGuest(
+            @Parameter(description = "Bill number") @PathVariable String billNo) {
+        try {
+            BillWithTransactionsResponse response = billService.getBillWithTransactionsByGuest(billNo);
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("Failed to retrieve bill and transactions: " + e.getMessage()));
         }
     }
 }

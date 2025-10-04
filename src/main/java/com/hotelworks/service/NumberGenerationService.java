@@ -28,6 +28,9 @@ public class NumberGenerationService {
     @Autowired
     private HotelSoftUserRepository hotelSoftUserRepository;
     
+    @Autowired
+    private ExpenseRepository expenseRepository;
+    
     /**
      * Generate reservation number with accounting year format
      * Sequential numbering: 1-25-26, 2-25-26, 3-25-26, etc.
@@ -90,6 +93,15 @@ public class NumberGenerationService {
         int nextSequence = (int) (count + 1);
         
         return String.format("R%d-%s", nextSequence, accountingYear);
+    }
+    
+    /**
+     * Generate expense ID
+     * Format: EXP + timestamp
+     */
+    public synchronized String generateExpenseId() {
+        long timestamp = System.currentTimeMillis();
+        return "EXP" + (timestamp % 1000000); // Keep it shorter but still unique
     }
     
     /**
@@ -225,6 +237,15 @@ public class NumberGenerationService {
         int nextSequence = (int) (count + 1);
         
         return String.format("R%d-%s", nextSequence, accountingYear);
+    }
+    
+    /**
+     * Generate sales ID
+     * Format: S + timestamp
+     */
+    public synchronized String generateSalesId() {
+        long timestamp = System.currentTimeMillis();
+        return "S" + (timestamp % 1000000); // Keep it shorter but still unique
     }
     
     /**

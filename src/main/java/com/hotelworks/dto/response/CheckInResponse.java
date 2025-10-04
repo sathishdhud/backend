@@ -20,6 +20,9 @@ public class CheckInResponse {
     private String walkIn;
     private BigDecimal totalAdvances;
     
+    // GST field (newly added)
+    private String includingGst;
+    
     // ID Proof fields (newly added)
     private String idProof1;
     private String idProof2;
@@ -35,6 +38,10 @@ public class CheckInResponse {
     private String nationalityId;
     private String refModeId;
     private String resvSourceId;
+    
+    private Integer noOfPersons;
+    
+    private Boolean checkout = false;
     
     // Constructors
     public CheckInResponse() {}
@@ -79,6 +86,10 @@ public class CheckInResponse {
     public String getWalkIn() { return walkIn; }
     public void setWalkIn(String walkIn) { this.walkIn = walkIn; }
     
+    // GST getters and setters (newly added)
+    public String getIncludingGst() { return includingGst; }
+    public void setIncludingGst(String includingGst) { this.includingGst = includingGst; }
+    
     public BigDecimal getTotalAdvances() { return totalAdvances; }
     public void setTotalAdvances(BigDecimal totalAdvances) { this.totalAdvances = totalAdvances; }
     
@@ -119,4 +130,10 @@ public class CheckInResponse {
     
     public String getResvSourceId() { return resvSourceId; }
     public void setResvSourceId(String resvSourceId) { this.resvSourceId = resvSourceId; }
+    
+    public Integer getNoOfPersons() { return noOfPersons; }
+    public void setNoOfPersons(Integer noOfPersons) { this.noOfPersons = noOfPersons; }
+    
+    public Boolean getCheckout() { return checkout; }
+    public void setCheckout(Boolean checkout) { this.checkout = checkout; }
 }

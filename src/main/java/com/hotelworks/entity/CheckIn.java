@@ -52,6 +52,10 @@ public class CheckIn {
     @Column(name = "walk_in")
     private String walkIn; // Y/N
     
+    // GST field (newly added)
+    @Column(name = "including_gst")
+    private String includingGst; // Y/N
+    
     // ID Proof fields (newly added)
     @Column(name = "id_proof1")
     private String idProof1;
@@ -89,6 +93,12 @@ public class CheckIn {
     
     @Column(name = "resv_source_id", nullable = true)
     private String resvSourceId;
+    
+    @Column(name = "no_of_persons")
+    private Integer noOfPersons;
+    
+    @Column(name = "checkout")
+    private Boolean checkout = false; // Defaults to false when creating check-in
     
     // Relationships
     @ManyToOne(fetch = FetchType.LAZY)
@@ -171,6 +181,10 @@ public class CheckIn {
     public String getWalkIn() { return walkIn; }
     public void setWalkIn(String walkIn) { this.walkIn = walkIn; }
     
+    // GST getters and setters (newly added)
+    public String getIncludingGst() { return includingGst; }
+    public void setIncludingGst(String includingGst) { this.includingGst = includingGst; }
+    
     // ID Proof getters and setters (newly added)
     public String getIdProof1() { return idProof1; }
     public void setIdProof1(String idProof1) { this.idProof1 = idProof1; }
@@ -208,6 +222,12 @@ public class CheckIn {
     
     public String getResvSourceId() { return resvSourceId; }
     public void setResvSourceId(String resvSourceId) { this.resvSourceId = resvSourceId; }
+    
+    public Integer getNoOfPersons() { return noOfPersons; }
+    public void setNoOfPersons(Integer noOfPersons) { this.noOfPersons = noOfPersons; }
+    
+    public Boolean getCheckout() { return checkout; }
+    public void setCheckout(Boolean checkout) { this.checkout = checkout; }
     
     // Relationship getters and setters
     public Reservation getReservation() { return reservation; }

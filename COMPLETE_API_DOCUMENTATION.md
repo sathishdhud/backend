@@ -856,6 +856,98 @@ GET /api/bills/pending-settlements
 Authorization: Bearer <token>
 ```
 
+**Get Bill and Transactions by Guest**
+```http
+GET /api/bills/{billNo}/transactions-by-guest
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": {
+    "bill": {
+      "billNo": "B8126-25-26",
+      "folioNo": "F2150-25-26",
+      "guestName": "John Doe",
+      "roomId": "ROOM3881",
+      "roomNo": "101",
+      "totalAmount": 2650.00,
+      "advanceAmount": 1000.00,
+      "balanceAmount": 1650.00,
+      "generatedAt": "2025-09-15T14:38:58.132763",
+      "transactions": [
+        {
+          "transactionId": "TXN001-25-26",
+          "folioNo": "F2150-25-26",
+          "billNo": "B8126-25-26",
+          "roomId": "ROOM3881",
+          "roomNo": "101",
+          "guestName": "John Doe",
+          "date": "2025-09-14",
+          "auditDate": "2025-09-14",
+          "accHeadId": "ACC001",
+          "accHeadName": "Room Service",
+          "voucherNo": "V001",
+          "amount": 1500.00,
+          "narration": "Food order"
+        }
+      ],
+      "advances": [
+        {
+          "receiptNo": "R001-25-26",
+          "folioNo": "F2150-25-26",
+          "billNo": "B8126-25-26",
+          "guestName": "John Doe",
+          "date": "2025-09-13",
+          "arrivalDate": "2025-09-13",
+          "auditDate": "2025-09-13",
+          "modeOfPaymentId": "CASH",
+          "modeOfPaymentName": "Cash Payment",
+          "amount": 1000.00,
+          "narration": "Advance payment"
+        }
+      ]
+    },
+    "transactions": [
+      {
+        "transactionId": "TXN001-25-26",
+        "folioNo": "F2150-25-26",
+        "billNo": "B8126-25-26",
+        "roomId": "ROOM3881",
+        "roomNo": "101",
+        "guestName": "John Doe",
+        "date": "2025-09-14",
+        "auditDate": "2025-09-14",
+        "accHeadId": "ACC001",
+        "accHeadName": "Room Service",
+        "voucherNo": "V001",
+        "amount": 1500.00,
+        "narration": "Food order"
+      },
+      {
+        "transactionId": "TXN002-25-26",
+        "folioNo": "F2150-25-26",
+        "billNo": "B8126-25-26",
+        "roomId": "ROOM3881",
+        "roomNo": "101",
+        "guestName": "John Doe",
+        "date": "2025-09-14",
+        "auditDate": "2025-09-14",
+        "accHeadId": "ACC002",
+        "accHeadName": "Laundry",
+        "voucherNo": "V002",
+        "amount": 1150.00,
+        "narration": "Dry cleaning"
+      }
+    ]
+  },
+  "timestamp": "2025-09-15T14:41:50.146944400"
+}
+```
+
 ### 👥 User & Access Management
 
 #### User Management (`/api/users`)
