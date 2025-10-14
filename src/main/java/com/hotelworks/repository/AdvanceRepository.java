@@ -45,6 +45,10 @@ public interface AdvanceRepository extends JpaRepository<Advance, String> {
     @Query("SELECT a FROM Advance a WHERE a.date BETWEEN :startDate AND :endDate")
     List<Advance> findAdvancesBetweenDates(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
     
-    @Query("SELECT SUM(a.amount) FROM Advance a WHERE a.shiftNo = :shiftNo")
-    BigDecimal getTotalAdvancesByShift(@Param("shiftNo") String shiftNo);
+    @Query("SELECT SUM(a.amount) FROM Advance a WHERE a.shiftNo = :shiftNo AND a.shiftDate = :shiftDate")
+    BigDecimal getTotalAdvancesByShift(@Param("shiftNo") String shiftNo, @Param("shiftDate") LocalDate shiftDate);
+    
+    // Method to get cash advances for a specific shift
+    @Query("SELECT SUM(a.amount) FROM Advance a WHERE a.shiftNo = :shiftNo AND a.shiftDate = :shiftDate AND a.modeOfPaymentId = 'CASH'")
+    BigDecimal getTotalCashAdvancesByShift(@Param("shiftNo") String shiftNo, @Param("shiftDate") LocalDate shiftDate);
 }

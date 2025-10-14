@@ -497,7 +497,8 @@ public class AdvanceService {
 
     private Advance createAdvanceEntity(AdvanceRequest request) {
         Advance advance = new Advance();
-        advance.setReceiptNo(numberGenerationService.generateReceiptNumber());
+        // Use the common receipt number generation instead of generateReceiptNumber()
+        advance.setReceiptNo(numberGenerationService.generateCommonReceiptNumber());
         advance.setGuestName(request.getGuestName());
         advance.setDate(request.getDate() != null ? request.getDate() : LocalDate.now());
         advance.setArrivalDate(request.getArrivalDate());

@@ -1,9 +1,10 @@
 package com.hotelworks.controller;
 
+import com.hotelworks.dto.response.ApiResponse;
 import com.hotelworks.dto.request.AuditDateChangeRequest;
 import com.hotelworks.dto.request.ShiftChangeRequest;
 import com.hotelworks.dto.request.ShiftCloseRequest;
-import com.hotelworks.dto.response.ApiResponse;
+import com.hotelworks.dto.request.DayEndRequest;
 import com.hotelworks.entity.Hmsystem;
 import com.hotelworks.service.OperationsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,7 +13,11 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/operations")
@@ -78,6 +83,21 @@ public class OperationsController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Failed to retrieve HMS system information: " + e.getMessage()));
+        }
+    }
+    
+    @PostMapping("/day-end")
+    @Operation(summary = "Process day end", 
+               description = "Process day end - updates HMSSYSTEM table and increases audit date by 1 day")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<String>> processDayEnd(
+            @Valid @RequestBody DayEndRequest request) {
+        try {
+            String result = operationsService.processDayEnd(request.getConfirmation());
+            return ResponseEntity.ok(ApiResponse.success(result));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Failed to process day end: " + e.getMessage()));
         }
     }
 }

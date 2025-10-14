@@ -19,6 +19,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -71,50 +72,39 @@ public class RoomStatusScheduler {
             System.out.println("- Successful Updates: " + result.getSuccessfulUpdates());
             System.out.println("- Failed Updates: " + result.getFailedUpdates());
             
-            if (!result.getUpdatedRooms().isEmpty()) {
-                System.out.println("Updated Rooms:");
-                for (RoomStatusManagementService.UpdatedRoomInfo room : result.getUpdatedRooms()) {
-                    System.out.println("  - Room " + room.getRoomNo() + " (" + room.getRoomId() + 
-                                     ") - Guest: " + room.getGuestName() + " - " + room.getNotes());
-                }
-            }
-            
-            if (!result.getFailedUpdatesList().isEmpty()) {
-                System.out.println("Failed Updates:");
-                for (RoomStatusManagementService.FailedUpdateInfo failed : result.getFailedUpdatesList()) {
-                    System.out.println("  - Room " + failed.getRoomId() + ": " + failed.getError());
-                }
-            }
-            
         } catch (Exception e) {
-            System.err.println("Error during automatic room status update: " + e.getMessage());
+            System.err.println("Error during automatic room status updates: " + e.getMessage());
             e.printStackTrace();
         }
     }
     
     /**
-     * Runs every 2 hours during business hours to check for overdue checkouts
-     * This helps staff identify guests who have overstayed
+     * Runs every 2 hours from 8 AM to 8 PM to check for overdue checkouts
+     * This ensures guests who have overstayed are identified
      */
-    @Scheduled(cron = "0 0 8-20/2 * * *") // Run every 2 hours from 8 AM to 8 PM
-    public void processOverdueCheckouts() {
+    @Scheduled(cron = "0 0 8,10,12,14,16,18,20 * * *") // Run at 8 AM, 10 AM, 12 PM, 2 PM, 4 PM, 6 PM, 8 PM
+    public void checkForOverdueCheckouts() {
         try {
             System.out.println("Checking for overdue checkouts...");
             
-            RoomStatusManagementService.RoomStatusUpdateResult result = 
-                roomStatusManagementService.processOverdueCheckouts();
+            LocalDate currentDate = LocalDate.now();
+            List<CheckIn> overdueGuests = checkInRepository.findOverdueCheckouts(currentDate);
             
-            if (result.getTotalCheckouts() > 0) {
-                System.out.println("Overdue checkout alert:");
-                System.out.println("- Processing Date: " + result.getProcessingDate());
-                System.out.println("- Overdue Checkouts Found: " + result.getTotalCheckouts());
-                
-                if (!result.getUpdatedRooms().isEmpty()) {
-                    System.out.println("Overdue Rooms Requiring Attention:");
-                    for (RoomStatusManagementService.UpdatedRoomInfo room : result.getUpdatedRooms()) {
-                        System.out.println("  - Room " + room.getRoomNo() + " (" + room.getRoomId() + 
-                                         ") - Guest: " + room.getGuestName() + " - " + room.getNotes());
+            System.out.println("Found " + overdueGuests.size() + " overdue checkouts as of " + currentDate);
+            
+            for (CheckIn checkIn : overdueGuests) {
+                try {
+                    Room room = roomRepository.findById(checkIn.getRoomId()).orElse(null);
+                    if (room != null) {
+                        System.out.println("Overdue checkout found - Folio: " + checkIn.getFolioNo() + 
+                                         ", Guest: " + checkIn.getGuestName() + 
+                                         ", Room: " + room.getRoomNo() + 
+                                         ", Expected Departure: " + checkIn.getDepartureDate());
                     }
+                } catch (Exception e) {
+                    System.err.println("Error processing overdue checkout for folio: " + checkIn.getFolioNo() + 
+                                     " - Error: " + e.getMessage());
+                    e.printStackTrace();
                 }
             }
             
@@ -126,7 +116,7 @@ public class RoomStatusScheduler {
     
     /**
      * Runs daily at 1:00 AM to post room charges and taxes for all in-house guests
-     * This ensures daily billing for ongoing stays
+     * This ensures daily billing for ongoing stays with proper GST handling
      */
     @Scheduled(cron = "0 0 1 * * *") // Run at 1:00 AM every day
     public void postDailyRoomChargesAndTaxes() {
@@ -141,17 +131,22 @@ public class RoomStatusScheduler {
             System.out.println("Found " + inHouseGuests.size() + " in-house guests for audit date: " + auditDate);
             
             int successfulPosts = 0;
+            int skippedPosts = 0;
             int failedPosts = 0;
-            
-            // Get tax information
-            Optional<Taxation> cgstTax = taxationRepository.findByTaxName("CGST");
-            Optional<Taxation> sgstTax = taxationRepository.findByTaxName("SGST");
-            
-            // Get account head for room charges
-            Optional<HotelAccountHead> roomChargeAccountHead = hotelAccountHeadRepository.findByName("Room Charges");
             
             for (CheckIn checkIn : inHouseGuests) {
                 try {
+                    // Check if room charges have already been posted for this audit date
+                    List<PostTransaction> existingCharges = postTransactionRepository.findRoomChargesByFolioAndAuditDate(
+                        checkIn.getFolioNo(), auditDate);
+                    
+                    if (!existingCharges.isEmpty()) {
+                        // Room charges already posted for this audit date, skip
+                        System.out.println("Skipping folio " + checkIn.getFolioNo() + " - charges already posted for " + auditDate);
+                        skippedPosts++;
+                        continue;
+                    }
+                    
                     // Get room details
                     Room room = roomRepository.findById(checkIn.getRoomId()).orElse(null);
                     if (room == null) {
@@ -176,7 +171,7 @@ public class RoomStatusScheduler {
                         continue;
                     }
                     
-                    // Check if the rate already includes GST
+                    // Check if the rate includes GST
                     boolean rateIncludesGst = false;
                     if (checkIn.getReservation() != null) {
                         rateIncludesGst = "Y".equalsIgnoreCase(checkIn.getReservation().getIncludingGst());
@@ -192,42 +187,35 @@ public class RoomStatusScheduler {
                         }
                     }
                     
-                    // Calculate taxes
+                    BigDecimal baseRoomRate;
                     BigDecimal cgstAmount = BigDecimal.ZERO;
                     BigDecimal sgstAmount = BigDecimal.ZERO;
-                    BigDecimal baseRoomRate = roomRate;
                     
-                    // If rate does not include GST, calculate taxes on the base rate
-                    if (!rateIncludesGst && cgstTax.isPresent() && cgstTax.get().getPercentage() != null) {
-                        cgstAmount = baseRoomRate.multiply(cgstTax.get().getPercentage())
-                                            .divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
-                    }
-                    
-                    if (!rateIncludesGst && sgstTax.isPresent() && sgstTax.get().getPercentage() != null) {
-                        sgstAmount = baseRoomRate.multiply(sgstTax.get().getPercentage())
-                                            .divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
-                    }
-                    
-                    // If rate already includes GST, we need to extract the base rate
-                    // For simplicity, we'll assume 18% total GST (9% CGST + 9% SGST)
                     if (rateIncludesGst) {
+                        // Rate includes GST (5% CGST + 5% SGST = 10% total)
                         // Calculate base rate from inclusive rate
                         // Base Rate = Inclusive Rate / (1 + GST Rate)
-                        BigDecimal totalGstRate = BigDecimal.valueOf(18); // 9% CGST + 9% SGST
-                        BigDecimal divisor = BigDecimal.valueOf(100).add(totalGstRate)
-                                                    .divide(BigDecimal.valueOf(100), 4, BigDecimal.ROUND_HALF_UP);
-                        baseRoomRate = roomRate.divide(divisor, 2, BigDecimal.ROUND_HALF_UP);
+                        // For 10% GST: Base Rate = Inclusive Rate / 1.10
+                        BigDecimal divisor = BigDecimal.valueOf(1.10);
+                        baseRoomRate = roomRate.divide(divisor, 2, RoundingMode.HALF_UP);
                         
-                        // Calculate tax amounts based on base rate
-                        if (cgstTax.isPresent() && cgstTax.get().getPercentage() != null) {
-                            cgstAmount = baseRoomRate.multiply(cgstTax.get().getPercentage())
-                                                .divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
-                        }
+                        // Calculate tax amounts (5% each)
+                        cgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
+                        sgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
                         
-                        if (sgstTax.isPresent() && sgstTax.get().getPercentage() != null) {
-                            sgstAmount = baseRoomRate.multiply(sgstTax.get().getPercentage())
-                                                .divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
+                        // Adjust for rounding differences
+                        BigDecimal totalTaxes = cgstAmount.add(sgstAmount);
+                        BigDecimal rateDifference = roomRate.subtract(baseRoomRate.add(totalTaxes));
+                        if (rateDifference.compareTo(BigDecimal.ZERO) != 0) {
+                            // Add difference to base rate to maintain total amount
+                            baseRoomRate = baseRoomRate.add(rateDifference);
                         }
+                    } else {
+                        // Rate does not include GST
+                        baseRoomRate = roomRate;
+                        // Calculate tax amounts (5% each)
+                        cgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
+                        sgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
                     }
                     
                     // Post room charge transaction
@@ -238,9 +226,10 @@ public class RoomStatusScheduler {
                     roomChargeTransaction.setGuestName(checkIn.getGuestName());
                     roomChargeTransaction.setDate(auditDate);
                     roomChargeTransaction.setAuditDate(auditDate);
-                    roomChargeTransaction.setAmount(roomRate);
+                    roomChargeTransaction.setAmount(baseRoomRate);
                     roomChargeTransaction.setNarration("Daily room charge for " + auditDate);
                     
+                    Optional<HotelAccountHead> roomChargeAccountHead = hotelAccountHeadRepository.findByName("Room Charges");
                     if (roomChargeAccountHead.isPresent()) {
                         roomChargeTransaction.setAccHeadId(roomChargeAccountHead.get().getAccHeadId());
                     } else {
@@ -298,7 +287,8 @@ public class RoomStatusScheduler {
                     
                     successfulPosts++;
                     System.out.println("Successfully posted charges for folio: " + checkIn.getFolioNo() + 
-                                     " (Room: " + room.getRoomNo() + ", Guest: " + checkIn.getGuestName() + ")");
+                                     " (Room: " + room.getRoomNo() + ", Guest: " + checkIn.getGuestName() + ")" +
+                                     " - Base: " + baseRoomRate + ", CGST: " + cgstAmount + ", SGST: " + sgstAmount);
                     
                 } catch (Exception e) {
                     failedPosts++;
@@ -312,6 +302,7 @@ public class RoomStatusScheduler {
             System.out.println("- Audit Date: " + auditDate);
             System.out.println("- In-House Guests: " + inHouseGuests.size());
             System.out.println("- Successful Posts: " + successfulPosts);
+            System.out.println("- Skipped Posts: " + skippedPosts);
             System.out.println("- Failed Posts: " + failedPosts);
             
         } catch (Exception e) {

@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate; // Added import
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -63,6 +64,7 @@ public class TransactionService {
             transaction.setNarration(request.getNarration());
             transaction.setShiftNo(request.getShiftNo());
             transaction.setShiftDate(request.getShiftDate());
+            transaction.setAuditDate(LocalDate.now()); // Set audit date to current date
             
             // Validate account head exists
             if (!hotelAccountHeadRepository.existsById(request.getAccountHeadId())) {
@@ -146,6 +148,7 @@ public class TransactionService {
             transaction.setNarration(request.getNarration());
             transaction.setShiftNo(request.getShiftNo());
             transaction.setShiftDate(request.getShiftDate());
+            transaction.setAuditDate(LocalDate.now()); // Update audit date to current date
             
             // Update room, bill, folio, and guest information if provided
             if (request.getRoomNo() != null && !request.getRoomNo().isEmpty()) {
@@ -244,7 +247,8 @@ public class TransactionService {
         try {
             // Create SalesReceipt entity
             SalesReceipt receipt = new SalesReceipt();
-            receipt.setReceiptNo(request.getReceiptNo());
+            // Use the common receipt number generation instead of request.getReceiptNo()
+            receipt.setReceiptNo(numberGenerationService.generateCommonReceiptNumber());
             receipt.setDate(request.getDate());
             receipt.setModeOfPaymentId(request.getModeOfPaymentId());
             receipt.setAmount(request.getAmount());
@@ -327,6 +331,17 @@ public class TransactionService {
         response.setVoucherNo(transaction.getVoucherNo());
         response.setDate(transaction.getDate());
         response.setAccountHeadId(transaction.getAccHeadId());
+        response.setAmount(transaction.getAmount());
+        response.setNarration(transaction.getNarration());
+        response.setShiftNo(transaction.getShiftNo());
+        response.setShiftDate(transaction.getShiftDate());
+        
+        // Additional fields
+        response.setFolioNo(transaction.getFolioNo());
+        response.setBillNo(transaction.getBillNo());
+        response.setRoomId(transaction.getRoomId());
+        response.setGuestName(transaction.getGuestName());
+        response.setAuditDate(transaction.getAuditDate());
         
         // Try to get account head name
         if (transaction.getAccHeadId() != null) {
@@ -336,27 +351,12 @@ public class TransactionService {
             }
         }
         
-        response.setAmount(transaction.getAmount());
-        response.setNarration(transaction.getNarration());
-        response.setShiftNo(transaction.getShiftNo());
-        response.setShiftDate(transaction.getShiftDate());
-        
-        // Add room information if available
+        // Try to get room number
         if (transaction.getRoomId() != null) {
             Room room = roomRepository.findById(transaction.getRoomId()).orElse(null);
             if (room != null) {
-                // We'll add room number to narration or create a separate field if needed
+                response.setRoomNo(room.getRoomNo());
             }
-        }
-        
-        // Add bill information if available
-        if (transaction.getBillNo() != null) {
-            // We'll add bill number to narration or create a separate field if needed
-        }
-        
-        // Add folio information if available
-        if (transaction.getFolioNo() != null) {
-            // We'll add folio number to narration or create a separate field if needed
         }
         
         return response;

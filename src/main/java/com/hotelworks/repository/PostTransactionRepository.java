@@ -40,4 +40,18 @@ public interface PostTransactionRepository extends JpaRepository<PostTransaction
     
     @Query("SELECT p FROM PostTransaction p WHERE p.folioNo = :folioNo ORDER BY p.date DESC")
     List<PostTransaction> findByFolioNoOrderByDateDesc(@Param("folioNo") String folioNo);
+    
+    // Method to check if room charges have already been posted for a specific audit date
+    @Query("SELECT p FROM PostTransaction p WHERE p.folioNo = :folioNo AND p.auditDate = :auditDate AND p.accHeadId = 'ROOM_CHARGES'")
+    List<PostTransaction> findRoomChargesByFolioAndAuditDate(@Param("folioNo") String folioNo, @Param("auditDate") LocalDate auditDate);
+    
+    // Methods to get expenses by shift information
+    List<PostTransaction> findByShiftNoAndShiftDate(String shiftNo, LocalDate shiftDate);
+    
+    // Method to get total expenses for a specific shift
+    @Query("SELECT SUM(p.amount) FROM PostTransaction p WHERE p.shiftNo = :shiftNo AND p.shiftDate = :shiftDate")
+    BigDecimal getTotalExpensesByShift(@Param("shiftNo") String shiftNo, @Param("shiftDate") LocalDate shiftDate);
+    
+    // Added method to find by voucher number
+    List<PostTransaction> findByVoucherNo(String voucherNo);
 }

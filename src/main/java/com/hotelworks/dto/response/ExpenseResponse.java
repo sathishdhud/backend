@@ -15,6 +15,14 @@ public class ExpenseResponse {
     private String shiftNo;
     private LocalDate shiftDate;
     
+    // Additional fields for more detailed response
+    private String folioNo;
+    private String billNo;
+    private String roomId;
+    private String roomNo;
+    private String guestName;
+    private LocalDate auditDate;
+    
     // Constructors
     public ExpenseResponse() {}
     
@@ -45,4 +53,23 @@ public class ExpenseResponse {
     
     public LocalDate getShiftDate() { return shiftDate; }
     public void setShiftDate(LocalDate shiftDate) { this.shiftDate = shiftDate; }
+    
+    // Additional getters and setters
+    public String getFolioNo() { return folioNo; }
+    public void setFolioNo(String folioNo) { this.folioNo = folioNo; }
+    
+    public String getBillNo() { return billNo; }
+    public void setBillNo(String billNo) { this.billNo = billNo; }
+    
+    public String getRoomId() { return roomId; }
+    public void setRoomId(String roomId) { this.roomId = roomId; }
+    
+    public String getRoomNo() { return roomNo; }
+    public void setRoomNo(String roomNo) { this.roomNo = roomNo; }
+    
+    public String getGuestName() { return guestName; }
+    public void setGuestName(String guestName) { this.guestName = guestName; }
+    
+    public LocalDate getAuditDate() { return auditDate; }
+    public void setAuditDate(LocalDate auditDate) { this.auditDate = auditDate; }
 }

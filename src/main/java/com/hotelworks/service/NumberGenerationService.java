@@ -31,6 +31,31 @@ public class NumberGenerationService {
     @Autowired
     private ExpenseRepository expenseRepository;
     
+    @Autowired
+    private SalesReceiptRepository salesReceiptRepository;
+    
+    /**
+     * Generate a common receipt number across all receipt types
+     * This ensures sequential numbering: R1-25-26, R2-25-26, R3-25-26, etc.
+     * regardless of whether they are advances, sales receipts, or other receipt types
+     */
+    public synchronized String generateCommonReceiptNumber() {
+        String accountingYear = getAccountingYear();
+        
+        // Count all receipt entities to ensure common sequential numbering
+        long advanceCount = advanceRepository.count();
+        long salesReceiptCount = salesReceiptRepository.count();
+        
+        // Add counts from any other receipt-type entities here as needed
+        // For example, if you have other receipt entities, add their counts too
+        
+        // Calculate the next sequence number based on all receipt types
+        long totalCount = advanceCount + salesReceiptCount;
+        int nextSequence = (int) (totalCount + 1);
+        
+        return String.format("R%d-%s", nextSequence, accountingYear);
+    }
+    
     /**
      * Generate reservation number with accounting year format
      * Sequential numbering: 1-25-26, 2-25-26, 3-25-26, etc.
@@ -82,17 +107,12 @@ public class NumberGenerationService {
     }
     
     /**
-     * Generate receipt number with accounting year format
+     * Generate receipt number with accounting year format (DEPRECATED - use generateCommonReceiptNumber instead)
      * Sequential numbering: R1-25-26, R2-25-26, R3-25-26, etc.
      */
+    @Deprecated
     public synchronized String generateReceiptNumber() {
-        String accountingYear = getAccountingYear();
-        
-        // Count existing advances for current accounting year
-        long count = advanceRepository.count();
-        int nextSequence = (int) (count + 1);
-        
-        return String.format("R%d-%s", nextSequence, accountingYear);
+        return generateCommonReceiptNumber();
     }
     
     /**
@@ -226,17 +246,12 @@ public class NumberGenerationService {
     }
     
     /**
-     * Generate advance receipt number for payments
+     * Generate advance receipt number for payments (DEPRECATED - use generateCommonReceiptNumber instead)
      * Sequential numbering: R1-25-26, R2-25-26, R3-25-26, etc.
      */
+    @Deprecated
     public synchronized String generateAdvanceReceiptNumber() {
-        String accountingYear = getAccountingYear();
-        
-        // Count existing advances for current accounting year
-        long count = advanceRepository.count();
-        int nextSequence = (int) (count + 1);
-        
-        return String.format("R%d-%s", nextSequence, accountingYear);
+        return generateCommonReceiptNumber();
     }
     
     /**

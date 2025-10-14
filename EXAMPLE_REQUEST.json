@@ -1,0 +1,12 @@
+{
+  "voucherNo": "EXP-001",
+  "date": "2025-10-12",
+  "accountHeadId": "RE",
+  "amount": 16,
+  "narration": "Restaurant expense for room 101",
+  "shiftNo": "1",
+  "shiftDate": "2025-10-12",
+  "roomNo": "101",
+  "folioNo": "F1-25-26",
+  "guestName": "John Doe"
+}

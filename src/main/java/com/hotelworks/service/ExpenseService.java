@@ -3,12 +3,21 @@ package com.hotelworks.service;
 import com.hotelworks.dto.request.ExpenseRequest;
 import com.hotelworks.dto.response.ExpenseResponse;
 import com.hotelworks.entity.Expense;
+import com.hotelworks.entity.PostTransaction; // Added import
+import com.hotelworks.entity.Room; // Added import
+import com.hotelworks.entity.FoBill; // Added import
+import com.hotelworks.entity.CheckIn; // Added import
 import com.hotelworks.repository.ExpenseRepository;
+import com.hotelworks.repository.PostTransactionRepository; // Added import
 import com.hotelworks.repository.HotelAccountHeadRepository;
+import com.hotelworks.repository.RoomRepository; // Added import
+import com.hotelworks.repository.FoBillRepository; // Added import
+import com.hotelworks.repository.CheckInRepository; // Added import
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate; // Added import
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,10 +25,19 @@ import java.util.stream.Collectors;
 public class ExpenseService {
     
     @Autowired
-    private ExpenseRepository expenseRepository;
+    private PostTransactionRepository postTransactionRepository; // Changed from ExpenseRepository
     
     @Autowired
     private HotelAccountHeadRepository hotelAccountHeadRepository;
+    
+    @Autowired
+    private RoomRepository roomRepository; // Added
+    
+    @Autowired
+    private FoBillRepository foBillRepository; // Added
+    
+    @Autowired
+    private CheckInRepository checkInRepository; // Added
     
     @Autowired
     private NumberGenerationService numberGenerationService;
@@ -30,27 +48,70 @@ public class ExpenseService {
     @Transactional
     public ExpenseResponse createExpense(ExpenseRequest request) {
         try {
-            // Create Expense entity
-            Expense expense = new Expense();
-            expense.setExpenseId(numberGenerationService.generateExpenseId());
-            expense.setVoucherNo(request.getVoucherNo());
-            expense.setDate(request.getDate());
-            expense.setAccountHeadId(request.getAccountHeadId());
-            expense.setAmount(request.getAmount());
-            expense.setNarration(request.getNarration());
-            expense.setShiftNo(request.getShiftNo());
-            expense.setShiftDate(request.getShiftDate());
+            // Create PostTransaction entity instead of Expense
+            PostTransaction transaction = new PostTransaction();
+            transaction.setTransactionId(numberGenerationService.generateTransactionId()); // Changed from generateExpenseId()
+            transaction.setVoucherNo(request.getVoucherNo());
+            transaction.setDate(request.getDate());
+            transaction.setAccHeadId(request.getAccountHeadId()); // Changed from setAccountHeadId()
+            transaction.setAmount(request.getAmount());
+            transaction.setNarration(request.getNarration());
+            transaction.setShiftNo(request.getShiftNo());
+            transaction.setShiftDate(request.getShiftDate());
+            transaction.setAuditDate(LocalDate.now()); // Set audit date to current date
             
             // Validate account head exists
             if (!hotelAccountHeadRepository.existsById(request.getAccountHeadId())) {
                 throw new RuntimeException("Account head not found: " + request.getAccountHeadId());
             }
             
-            // Save the expense
-            Expense savedExpense = expenseRepository.save(expense);
+            // Set room, bill, folio, and guest information if provided
+            if (request.getRoomNo() != null && !request.getRoomNo().isEmpty()) {
+                Room room = roomRepository.findByRoomNo(request.getRoomNo())
+                    .orElseThrow(() -> new RuntimeException("Room not found: " + request.getRoomNo()));
+                transaction.setRoomId(room.getRoomId());
+            }
+            
+            if (request.getBillNo() != null && !request.getBillNo().isEmpty()) {
+                if (!foBillRepository.existsById(request.getBillNo())) {
+                    throw new RuntimeException("Bill not found: " + request.getBillNo());
+                }
+                transaction.setBillNo(request.getBillNo());
+            }
+            
+            if (request.getFolioNo() != null && !request.getFolioNo().isEmpty()) {
+                if (!checkInRepository.existsById(request.getFolioNo())) {
+                    throw new RuntimeException("Folio not found: " + request.getFolioNo());
+                }
+                transaction.setFolioNo(request.getFolioNo());
+            }
+            
+            if (request.getGuestName() != null && !request.getGuestName().isEmpty()) {
+                transaction.setGuestName(request.getGuestName());
+            } else if (request.getBillNo() != null && !request.getBillNo().isEmpty()) {
+                // Try to get guest name from bill
+                FoBill bill = foBillRepository.findById(request.getBillNo()).orElse(null);
+                if (bill != null && bill.getGuestName() != null) {
+                    transaction.setGuestName(bill.getGuestName());
+                }
+            } else if (request.getFolioNo() != null && !request.getFolioNo().isEmpty()) {
+                // Try to get guest name from check-in
+                CheckIn checkIn = checkInRepository.findById(request.getFolioNo()).orElse(null);
+                if (checkIn != null && checkIn.getGuestName() != null) {
+                    transaction.setGuestName(checkIn.getGuestName());
+                }
+            }
+            
+            // Ensure guest name is set
+            if (transaction.getGuestName() == null || transaction.getGuestName().isEmpty()) {
+                transaction.setGuestName("Unknown Guest");
+            }
+            
+            // Save the transaction
+            PostTransaction savedTransaction = postTransactionRepository.save(transaction);
             
             // Convert to response DTO
-            return convertToExpenseResponse(savedExpense);
+            return convertToExpenseResponse(savedTransaction);
         } catch (Exception e) {
             // Log the actual exception for debugging
             e.printStackTrace();
@@ -62,31 +123,80 @@ public class ExpenseService {
      * Update an existing expense
      */
     @Transactional
-    public ExpenseResponse updateExpense(String expenseId, ExpenseRequest request) {
+    public ExpenseResponse updateExpense(String transactionId, ExpenseRequest request) { // Changed parameter from expenseId to transactionId
         try {
-            // Find the existing expense
-            Expense expense = expenseRepository.findById(expenseId)
-                .orElseThrow(() -> new RuntimeException("Expense not found with ID: " + expenseId));
+            // Find the existing transaction
+            PostTransaction transaction = postTransactionRepository.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException("Expense not found with transaction ID: " + transactionId)); // Changed message
             
             // Validate account head exists
             if (!hotelAccountHeadRepository.existsById(request.getAccountHeadId())) {
                 throw new RuntimeException("Account head not found: " + request.getAccountHeadId());
             }
             
-            // Update the expense fields
-            expense.setVoucherNo(request.getVoucherNo());
-            expense.setDate(request.getDate());
-            expense.setAccountHeadId(request.getAccountHeadId());
-            expense.setAmount(request.getAmount());
-            expense.setNarration(request.getNarration());
-            expense.setShiftNo(request.getShiftNo());
-            expense.setShiftDate(request.getShiftDate());
+            // Update the transaction fields
+            transaction.setVoucherNo(request.getVoucherNo());
+            transaction.setDate(request.getDate());
+            transaction.setAccHeadId(request.getAccountHeadId()); // Changed from setAccountHeadId()
+            transaction.setAmount(request.getAmount());
+            transaction.setNarration(request.getNarration());
+            transaction.setShiftNo(request.getShiftNo());
+            transaction.setShiftDate(request.getShiftDate());
+            transaction.setAuditDate(LocalDate.now()); // Update audit date to current date
             
-            // Save the updated expense
-            Expense savedExpense = expenseRepository.save(expense);
+            // Update room, bill, folio, and guest information if provided
+            if (request.getRoomNo() != null && !request.getRoomNo().isEmpty()) {
+                Room room = roomRepository.findByRoomNo(request.getRoomNo())
+                    .orElseThrow(() -> new RuntimeException("Room not found: " + request.getRoomNo()));
+                transaction.setRoomId(room.getRoomId());
+            } else {
+                transaction.setRoomId(null);
+            }
+            
+            if (request.getBillNo() != null && !request.getBillNo().isEmpty()) {
+                if (!foBillRepository.existsById(request.getBillNo())) {
+                    throw new RuntimeException("Bill not found: " + request.getBillNo());
+                }
+                transaction.setBillNo(request.getBillNo());
+            } else {
+                transaction.setBillNo(null);
+            }
+            
+            if (request.getFolioNo() != null && !request.getFolioNo().isEmpty()) {
+                if (!checkInRepository.existsById(request.getFolioNo())) {
+                    throw new RuntimeException("Folio not found: " + request.getFolioNo());
+                }
+                transaction.setFolioNo(request.getFolioNo());
+            } else {
+                transaction.setFolioNo(null);
+            }
+            
+            if (request.getGuestName() != null && !request.getGuestName().isEmpty()) {
+                transaction.setGuestName(request.getGuestName());
+            } else if (request.getBillNo() != null && !request.getBillNo().isEmpty()) {
+                // Try to get guest name from bill
+                FoBill bill = foBillRepository.findById(request.getBillNo()).orElse(null);
+                if (bill != null && bill.getGuestName() != null) {
+                    transaction.setGuestName(bill.getGuestName());
+                }
+            } else if (request.getFolioNo() != null && !request.getFolioNo().isEmpty()) {
+                // Try to get guest name from check-in
+                CheckIn checkIn = checkInRepository.findById(request.getFolioNo()).orElse(null);
+                if (checkIn != null && checkIn.getGuestName() != null) {
+                    transaction.setGuestName(checkIn.getGuestName());
+                }
+            }
+            
+            // Ensure guest name is set
+            if (transaction.getGuestName() == null || transaction.getGuestName().isEmpty()) {
+                transaction.setGuestName("Unknown Guest");
+            }
+            
+            // Save the updated transaction
+            PostTransaction savedTransaction = postTransactionRepository.save(transaction);
             
             // Convert to response DTO
-            return convertToExpenseResponse(savedExpense);
+            return convertToExpenseResponse(savedTransaction);
         } catch (Exception e) {
             // Log the actual exception for debugging
             e.printStackTrace();
@@ -95,18 +205,18 @@ public class ExpenseService {
     }
     
     /**
-     * Delete an expense by ID
+     * Delete an expense by transaction ID
      */
     @Transactional
-    public void deleteExpense(String expenseId) {
+    public void deleteExpense(String transactionId) { // Changed parameter from expenseId to transactionId
         try {
             // Check if the expense exists
-            if (!expenseRepository.existsById(expenseId)) {
-                throw new RuntimeException("Expense not found with ID: " + expenseId);
+            if (!postTransactionRepository.existsById(transactionId)) { // Changed from expenseRepository
+                throw new RuntimeException("Expense not found with transaction ID: " + transactionId); // Changed message
             }
             
             // Delete the expense
-            expenseRepository.deleteById(expenseId);
+            postTransactionRepository.deleteById(transactionId); // Changed from expenseRepository
         } catch (Exception e) {
             // Log the actual exception for debugging
             e.printStackTrace();
@@ -115,20 +225,20 @@ public class ExpenseService {
     }
     
     /**
-     * Get expense by ID
+     * Get expense by transaction ID
      */
-    public ExpenseResponse getExpenseById(String expenseId) {
-        Expense expense = expenseRepository.findById(expenseId)
-            .orElseThrow(() -> new RuntimeException("Expense not found with ID: " + expenseId));
-        return convertToExpenseResponse(expense);
+    public ExpenseResponse getExpenseById(String transactionId) { // Changed method name and parameter
+        PostTransaction transaction = postTransactionRepository.findById(transactionId) // Changed from expenseRepository
+            .orElseThrow(() -> new RuntimeException("Expense not found with transaction ID: " + transactionId)); // Changed message
+        return convertToExpenseResponse(transaction);
     }
     
     /**
      * Get all expenses
      */
     public List<ExpenseResponse> getAllExpenses() {
-        List<Expense> expenses = expenseRepository.findAll();
-        return expenses.stream()
+        List<PostTransaction> transactions = postTransactionRepository.findAll(); // Changed from expenseRepository
+        return transactions.stream()
                 .map(this::convertToExpenseResponse)
                 .collect(Collectors.toList());
     }
@@ -137,8 +247,9 @@ public class ExpenseService {
      * Get expenses by voucher number
      */
     public List<ExpenseResponse> getExpensesByVoucherNo(String voucherNo) {
-        List<Expense> expenses = expenseRepository.findByVoucherNo(voucherNo);
-        return expenses.stream()
+        // Need to query PostTransaction by voucherNo
+        List<PostTransaction> transactions = postTransactionRepository.findByVoucherNo(voucherNo); // Changed implementation
+        return transactions.stream()
                 .map(this::convertToExpenseResponse)
                 .collect(Collectors.toList());
     }
@@ -147,33 +258,47 @@ public class ExpenseService {
      * Get expenses by account head
      */
     public List<ExpenseResponse> getExpensesByAccountHead(String accountHeadId) {
-        List<Expense> expenses = expenseRepository.findByAccountHeadId(accountHeadId);
-        return expenses.stream()
+        // Need to query PostTransaction by account head ID
+        List<PostTransaction> transactions = postTransactionRepository.findByAccHeadId(accountHeadId); // Changed implementation and method call
+        return transactions.stream()
                 .map(this::convertToExpenseResponse)
                 .collect(Collectors.toList());
     }
     
     /**
-     * Convert Expense entity to ExpenseResponse DTO
+     * Convert PostTransaction entity to ExpenseResponse DTO
      */
-    private ExpenseResponse convertToExpenseResponse(Expense expense) {
+    private ExpenseResponse convertToExpenseResponse(PostTransaction transaction) { // Changed parameter type
         ExpenseResponse response = new ExpenseResponse();
-        response.setTransactionId(expense.getExpenseId());
-        response.setVoucherNo(expense.getVoucherNo());
-        response.setDate(expense.getDate());
-        response.setAccountHeadId(expense.getAccountHeadId());
+        response.setTransactionId(transaction.getTransactionId()); // Changed from getExpenseId()
+        response.setVoucherNo(transaction.getVoucherNo());
+        response.setDate(transaction.getDate());
+        response.setAccountHeadId(transaction.getAccHeadId()); // Changed from getAccountHeadId()
+        response.setAmount(transaction.getAmount());
+        response.setNarration(transaction.getNarration());
+        response.setShiftNo(transaction.getShiftNo());
+        response.setShiftDate(transaction.getShiftDate());
+        
+        // Additional fields
+        response.setFolioNo(transaction.getFolioNo());
+        response.setBillNo(transaction.getBillNo());
+        response.setRoomId(transaction.getRoomId());
+        response.setGuestName(transaction.getGuestName());
+        response.setAuditDate(transaction.getAuditDate());
         
         // Try to get account head name
-        if (expense.getAccountHeadId() != null) {
-            hotelAccountHeadRepository.findById(expense.getAccountHeadId()).ifPresent(accountHead -> 
-                response.setAccountHeadName(accountHead.getName())
-            );
+        if (transaction.getAccHeadId() != null) { // Changed from getAccountHeadId()
+            hotelAccountHeadRepository.findById(transaction.getAccHeadId()).ifPresent(accountHead -> { // Changed from getAccountHeadId()
+                response.setAccountHeadName(accountHead.getName());
+            });
         }
         
-        response.setAmount(expense.getAmount());
-        response.setNarration(expense.getNarration());
-        response.setShiftNo(expense.getShiftNo());
-        response.setShiftDate(expense.getShiftDate());
+        // Try to get room number
+        if (transaction.getRoomId() != null) {
+            roomRepository.findById(transaction.getRoomId()).ifPresent(room -> {
+                response.setRoomNo(room.getRoomNo());
+            });
+        }
         
         return response;
     }
