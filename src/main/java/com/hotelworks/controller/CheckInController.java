@@ -108,13 +108,27 @@ public class CheckInController {
     @Operation(summary = "Update check-in details", description = "Update check-in information (guest name, departure date, rate, remarks)")
     public ResponseEntity<ApiResponse<CheckInResponse>> updateCheckIn(
             @Parameter(description = "Folio number") @PathVariable String folioNo,
-            @Valid @RequestBody CheckInRequest request) {
+            @RequestBody CheckInRequest request) {
         try {
             CheckInResponse response = checkInService.updateCheckIn(folioNo, request);
             return ResponseEntity.ok(ApiResponse.success("Check-in updated successfully", response));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.error("Failed to update check-in: " + e.getMessage()));
+        }
+    }
+    
+    // New endpoint to update check-in using only folio number from URL
+    @PutMapping("/status/{folioNo}")
+    @Operation(summary = "Update check-in status", description = "Update check-in status using folio number only")
+    public ResponseEntity<ApiResponse<CheckInResponse>> updateCheckInStatus(
+            @Parameter(description = "Folio number") @PathVariable String folioNo) {
+        try {
+            CheckInResponse response = checkInService.updateCheckInStatus(folioNo);
+            return ResponseEntity.ok(ApiResponse.success("Check-in status updated successfully", response));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.error("Failed to update check-in status: " + e.getMessage()));
         }
     }
 }

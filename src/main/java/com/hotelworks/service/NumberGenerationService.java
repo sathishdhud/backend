@@ -28,11 +28,59 @@ public class NumberGenerationService {
     @Autowired
     private HotelSoftUserRepository hotelSoftUserRepository;
     
-    @Autowired
-    private ExpenseRepository expenseRepository;
     
     @Autowired
     private SalesReceiptRepository salesReceiptRepository;
+    
+    // Add repository for PostTransaction
+    @Autowired
+    private PostTransactionRepository postTransactionRepository;
+    
+    // Add repository for Refund
+    @Autowired
+    private RefundRepository refundRepository;
+    
+    /**
+     * Generate expense voucher number with accounting year format
+     * Sequential numbering: E1-25-26, E2-25-26, E3-25-26, etc.
+     */
+    public synchronized String generateExpenseVoucherNumber() {
+        String accountingYear = getAccountingYear();
+        
+        // Count existing expense transactions for current accounting year
+        long count = postTransactionRepository.count();
+        int nextSequence = (int) (count + 1);
+        
+        return String.format("E%d-%s", nextSequence, accountingYear);
+    }
+    
+    /**
+     * Generate transaction voucher number with accounting year format
+     * Sequential numbering: T1-25-26, T2-25-26, T3-25-26, etc.
+     */
+    public synchronized String generateTransactionVoucherNumber() {
+        String accountingYear = getAccountingYear();
+        
+        // Count existing transactions for current accounting year
+        long count = postTransactionRepository.count();
+        int nextSequence = (int) (count + 1);
+        
+        return String.format("T%d-%s", nextSequence, accountingYear);
+    }
+    
+    /**
+     * Generate refund voucher number with accounting year format
+     * Sequential numbering: RF1-25-26, RF2-25-26, RF3-25-26, etc.
+     */
+    public synchronized String generateRefundVoucherNumber() {
+        String accountingYear = getAccountingYear();
+        
+        // Count existing refunds for current accounting year
+        long count = refundRepository.count();
+        int nextSequence = (int) (count + 1);
+        
+        return String.format("RF%d-%s", nextSequence, accountingYear);
+    }
     
     /**
      * Generate a common receipt number across all receipt types
@@ -115,14 +163,6 @@ public class NumberGenerationService {
         return generateCommonReceiptNumber();
     }
     
-    /**
-     * Generate expense ID
-     * Format: EXP + timestamp
-     */
-    public synchronized String generateExpenseId() {
-        long timestamp = System.currentTimeMillis();
-        return "EXP" + (timestamp % 1000000); // Keep it shorter but still unique
-    }
     
     /**
      * Generate transaction ID

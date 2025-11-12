@@ -71,6 +71,11 @@ public class RoomStatusManagementService {
                     if ("OD".equals(room.getStatus()) || "OI".equals(room.getStatus())) {
                         room.setStatus("VR"); // Make room available for new reservations
                         roomRepository.save(room);
+                        
+                        // Mark check-in as checked out (set checkout to true/1)
+                        checkIn.setCheckout(true);
+                        checkInRepository.save(checkIn);
+                        
                         successfulUpdates++;
                         
                         result.addUpdatedRoom(room.getRoomId(), room.getRoomNo(), 
@@ -118,6 +123,8 @@ public class RoomStatusManagementService {
                     // Mark as requiring attention - guest overstayed
                     room.setStatus("OD"); // Keep as occupied but flag for staff attention
                     roomRepository.save(room);
+                    
+                    // Note: We don't mark as checked out since they're still staying
                     successfulUpdates++;
                     
                     result.addUpdatedRoom(room.getRoomId(), room.getRoomNo(), 
@@ -149,6 +156,16 @@ public class RoomStatusManagementService {
             room.setStatus("VR");
             roomRepository.save(room);
             
+            // If folio number is provided, mark the check-in as checked out
+            if (folioNo != null && !folioNo.isEmpty()) {
+                CheckIn checkIn = checkInRepository.findById(folioNo)
+                    .orElseThrow(() -> new RuntimeException("Check-in not found: " + folioNo));
+                
+                // Mark check-in as checked out (set checkout to true/1)
+                checkIn.setCheckout(true);
+                checkInRepository.save(checkIn);
+            }
+            
             return true;
         } catch (Exception e) {
             throw new RuntimeException("Failed to update room status after departure: " + e.getMessage());
@@ -165,11 +182,12 @@ public class RoomStatusManagementService {
             return false;
         }
         
-        // Check if there are any overlapping check-ins
+        // Check if there are any overlapping check-ins that are not checked out
         List<CheckIn> overlappingStays = checkInRepository.findOverlappingStays(
             roomId, arrivalDate, departureDate);
         
-        return overlappingStays.isEmpty();
+        // Filter out checked-out guests
+        return overlappingStays.stream().noneMatch(checkIn -> checkIn.getCheckout() != null && checkIn.getCheckout());
     }
     
     /**

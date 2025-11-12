@@ -10,6 +10,7 @@ import com.hotelworks.repository.FoBillRepository;
 import com.hotelworks.repository.RoomRepository;
 import com.hotelworks.repository.HotelAccountHeadRepository;
 import com.hotelworks.repository.TaxationRepository;
+import com.hotelworks.repository.HmsystemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,7 +44,23 @@ public class PostTransactionService {
     private TaxationRepository taxationRepository;
     
     @Autowired
+    private HmsystemRepository hmsystemRepository;
+    
+    @Autowired
     private NumberGenerationService numberGenerationService;
+    
+    /**
+     * Get the current audit date from the HMS system
+     */
+    private LocalDate getCurrentAuditDate() {
+        Optional<com.hotelworks.entity.Hmsystem> latestHmsystemOpt = hmsystemRepository.findLatestRecord();
+        if (latestHmsystemOpt.isPresent()) {
+            return latestHmsystemOpt.get().getShiftDate();
+        } else {
+            // Fallback to current system date if no HMS record exists
+            return LocalDate.now();
+        }
+    }
     
     /**
      * Create transaction for in-house guest
@@ -61,8 +78,8 @@ public class PostTransactionService {
         
         PostTransaction transaction = createTransactionEntity(request);
         transaction.setFolioNo(request.getFolioNo());
-        transaction.setDate(LocalDate.now()); // Use audit date for in-house guests
-        transaction.setAuditDate(LocalDate.now());
+        transaction.setDate(getCurrentAuditDate()); // Use audit date for in-house guests
+        transaction.setAuditDate(getCurrentAuditDate());
         
         PostTransaction savedTransaction = postTransactionRepository.save(transaction);
         
@@ -93,7 +110,7 @@ public class PostTransactionService {
         PostTransaction transaction = createTransactionEntity(request);
         transaction.setBillNo(request.getBillNo());
         transaction.setDate(request.getDate()); // Manual date entry
-        transaction.setAuditDate(request.getDate());
+        transaction.setAuditDate(getCurrentAuditDate());
         
         PostTransaction savedTransaction = postTransactionRepository.save(transaction);
         return mapToPostTransactionResponse(savedTransaction);
@@ -176,7 +193,7 @@ public class PostTransactionService {
         // Update editable fields
         transaction.setGuestName(request.getGuestName());
         transaction.setAccHeadId(request.getAccHeadId());
-        transaction.setVoucherNo(request.getVoucherNo());
+        // Note: voucher number is not updated as it's a sequential identifier
         
         // Handle GST inclusion - if amount includes GST, update it to include CGST and SGST
         BigDecimal finalAmount = request.getAmount();
@@ -235,7 +252,8 @@ public class PostTransactionService {
         transaction.setRoomId(request.getRoomId());
         transaction.setGuestName(request.getGuestName());
         transaction.setAccHeadId(request.getAccHeadId());
-        transaction.setVoucherNo(request.getVoucherNo());
+        // Generate proper sequential voucher number instead of using request body
+        transaction.setVoucherNo(numberGenerationService.generateTransactionVoucherNumber());
         
         // Handle GST inclusion - if amount includes GST, update it to include CGST and SGST
         BigDecimal finalAmount = request.getAmount();

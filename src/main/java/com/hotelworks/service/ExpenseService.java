@@ -13,12 +13,14 @@ import com.hotelworks.repository.HotelAccountHeadRepository;
 import com.hotelworks.repository.RoomRepository; // Added import
 import com.hotelworks.repository.FoBillRepository; // Added import
 import com.hotelworks.repository.CheckInRepository; // Added import
+import com.hotelworks.repository.HmsystemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate; // Added import
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,7 +42,23 @@ public class ExpenseService {
     private CheckInRepository checkInRepository; // Added
     
     @Autowired
+    private HmsystemRepository hmsystemRepository;
+    
+    @Autowired
     private NumberGenerationService numberGenerationService;
+    
+    /**
+     * Get the current audit date from the HMS system
+     */
+    private LocalDate getCurrentAuditDate() {
+        Optional<com.hotelworks.entity.Hmsystem> latestHmsystemOpt = hmsystemRepository.findLatestRecord();
+        if (latestHmsystemOpt.isPresent()) {
+            return latestHmsystemOpt.get().getShiftDate();
+        } else {
+            // Fallback to current system date if no HMS record exists
+            return LocalDate.now();
+        }
+    }
     
     /**
      * Create a new expense
@@ -51,14 +69,15 @@ public class ExpenseService {
             // Create PostTransaction entity instead of Expense
             PostTransaction transaction = new PostTransaction();
             transaction.setTransactionId(numberGenerationService.generateTransactionId()); // Changed from generateExpenseId()
-            transaction.setVoucherNo(request.getVoucherNo());
+            // Generate proper sequential voucher number instead of using request body
+            transaction.setVoucherNo(numberGenerationService.generateExpenseVoucherNumber());
             transaction.setDate(request.getDate());
             transaction.setAccHeadId(request.getAccountHeadId()); // Changed from setAccountHeadId()
             transaction.setAmount(request.getAmount());
             transaction.setNarration(request.getNarration());
             transaction.setShiftNo(request.getShiftNo());
             transaction.setShiftDate(request.getShiftDate());
-            transaction.setAuditDate(LocalDate.now()); // Set audit date to current date
+            transaction.setAuditDate(getCurrentAuditDate()); // Use audit date from HMS system
             
             // Validate account head exists
             if (!hotelAccountHeadRepository.existsById(request.getAccountHeadId())) {
@@ -135,14 +154,14 @@ public class ExpenseService {
             }
             
             // Update the transaction fields
-            transaction.setVoucherNo(request.getVoucherNo());
+            // Note: voucher number is not updated as it's a sequential identifier
             transaction.setDate(request.getDate());
             transaction.setAccHeadId(request.getAccountHeadId()); // Changed from setAccountHeadId()
             transaction.setAmount(request.getAmount());
             transaction.setNarration(request.getNarration());
             transaction.setShiftNo(request.getShiftNo());
             transaction.setShiftDate(request.getShiftDate());
-            transaction.setAuditDate(LocalDate.now()); // Update audit date to current date
+            transaction.setAuditDate(getCurrentAuditDate()); // Update audit date to current date
             
             // Update room, bill, folio, and guest information if provided
             if (request.getRoomNo() != null && !request.getRoomNo().isEmpty()) {

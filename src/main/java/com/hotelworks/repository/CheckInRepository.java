@@ -29,8 +29,8 @@ public interface CheckInRepository extends JpaRepository<CheckIn, String> {
     @Query("SELECT c FROM CheckIn c WHERE c.departureDate = :date")
     List<CheckIn> findExpectedCheckouts(@Param("date") LocalDate date);
     
-    @Query("SELECT c FROM CheckIn c WHERE c.arrivalDate <= :currentDate AND c.departureDate >= :currentDate")
-    List<CheckIn> findInHouseGuests(@Param("currentDate") LocalDate currentDate);
+    @Query("SELECT c FROM CheckIn c WHERE c.checkout = false")
+    List<CheckIn> findInHouseGuests();
     
     @Query("SELECT c FROM CheckIn c WHERE c.guestName LIKE %:searchTerm% OR c.folioNo LIKE %:searchTerm% OR c.roomId LIKE %:searchTerm%")
     List<CheckIn> searchCheckIns(@Param("searchTerm") String searchTerm);

@@ -31,6 +31,11 @@ public class RefundService {
             refund.setReceiptNo(numberGenerationService.generateCommonReceiptNumber());
         }
         
+        // Generate refund voucher number if not provided
+        if (refund.getVoucherNo() == null || refund.getVoucherNo().isEmpty()) {
+            refund.setVoucherNo(numberGenerationService.generateRefundVoucherNumber());
+        }
+        
         return refundRepository.save(refund);
     }
     
@@ -79,7 +84,7 @@ public class RefundService {
         refund.setDate(refundDetails.getDate());
         refund.setModeOfPaymentId(refundDetails.getModeOfPaymentId());
         refund.setAmount(refundDetails.getAmount());
-        refund.setVoucherNo(refundDetails.getVoucherNo());
+        // Note: voucher number is not updated as it's a sequential identifier
         refund.setNarration(refundDetails.getNarration());
         refund.setShiftNo(refundDetails.getShiftNo());
         refund.setShiftDate(refundDetails.getShiftDate());

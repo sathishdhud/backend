@@ -61,6 +61,19 @@ public class OperationsService {
     private NumberGenerationService numberGenerationService;
     
     /**
+     * Get the current audit date from the HMS system
+     */
+    private LocalDate getCurrentAuditDate() {
+        Optional<Hmsystem> latestHmsystemOpt = hmsystemRepository.findLatestRecord();
+        if (latestHmsystemOpt.isPresent()) {
+            return latestHmsystemOpt.get().getShiftDate();
+        } else {
+            // Fallback to current system date if no HMS record exists
+            return LocalDate.now();
+        }
+    }
+    
+    /**
      * Process audit date change - posts room charges and taxes for all in-house guests
      * Implements proper GST handling as per requirements:
      * - If GST is included in rate: Calculate base rate and split taxes
@@ -71,8 +84,8 @@ public class OperationsService {
             throw new RuntimeException("Audit date change requires confirmation");
         }
         
-        LocalDate auditDate = LocalDate.now();
-        List<CheckIn> inHouseGuests = checkInRepository.findInHouseGuests(auditDate);
+        LocalDate auditDate = getCurrentAuditDate();
+        List<CheckIn> inHouseGuests = checkInRepository.findInHouseGuests(); // No longer filtered by date
         
         // Ensure required account heads exist
         ensureRequiredAccountHeadsExist();
@@ -123,7 +136,7 @@ public class OperationsService {
             Shift newShift = new Shift();
             newShift.setShiftNo(request.getShiftNo());
             newShift.setShiftDate(request.getShiftDate());
-            newShift.setAuditDate(request.getShiftDate()); // Audit date same as shift date initially
+            newShift.setAuditDate(getCurrentAuditDate()); // Use audit date from HMS system
             newShift.setOpeningBalance(request.getOpeningBalance());
             newShift.setClosingBalance(request.getClosingBalance());
             newShift.setTotalIncome(request.getTotalIncome());
@@ -177,7 +190,7 @@ public class OperationsService {
         Shift shift = new Shift();
         shift.setShiftNo(shiftNo);
         shift.setShiftDate(shiftDate);
-        shift.setAuditDate(shiftDate); // Audit date same as shift date initially
+        shift.setAuditDate(getCurrentAuditDate()); // Use audit date from HMS system
         shift.setOpeningBalance(request.getOpeningBalance());
         shift.setClosingBalance(calculatedClosingBalance);
         shift.setTotalIncome(totalCashReceipts);
@@ -289,7 +302,7 @@ public class OperationsService {
         // Ensure required account heads exist
         ensureRequiredAccountHeadsExist();
         
-        List<CheckIn> inHouseGuests = checkInRepository.findInHouseGuests(auditDate);
+        List<CheckIn> inHouseGuests = checkInRepository.findInHouseGuests(); // No longer filtered by date
         
         int processedCount = 0;
         int skippedCount = 0;
@@ -346,33 +359,38 @@ public class OperationsService {
             BigDecimal divisor = BigDecimal.valueOf(1.10);
             baseRoomRate = roomRate.divide(divisor, 2, RoundingMode.HALF_UP);
             
-            // Calculate tax amounts (5% each)
+            // Round base room rate to 0 decimal places
+            baseRoomRate = baseRoomRate.setScale(0, RoundingMode.HALF_UP);
+            
+            // Calculate tax amounts (5% each) on the base room rate
             cgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
             sgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
             
-            // Adjust for rounding differences
-            BigDecimal totalTaxes = cgstAmount.add(sgstAmount);
-            BigDecimal rateDifference = roomRate.subtract(baseRoomRate.add(totalTaxes));
-            if (rateDifference.compareTo(BigDecimal.ZERO) != 0) {
-                // Add difference to base rate to maintain total amount
-                baseRoomRate = baseRoomRate.add(rateDifference);
+            // Adjust for rounding differences to ensure total equals room rate
+            BigDecimal totalCalculated = baseRoomRate.add(cgstAmount).add(sgstAmount);
+            BigDecimal difference = roomRate.subtract(totalCalculated);
+            if (difference.compareTo(BigDecimal.ZERO) != 0) {
+                // Add the difference to base room rate to maintain total
+                baseRoomRate = baseRoomRate.add(difference);
             }
         } else {
             // Rate does not include GST
             baseRoomRate = roomRate;
-            // Calculate tax amounts (5% each)
-            cgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
-            sgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
+            // Calculate tax amounts (5% each) on the base room rate
+            // Each tax is 2.5% of the base room rate (total 5% GST)
+            cgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.025)).setScale(0, RoundingMode.HALF_UP);
+            sgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.025)).setScale(0, RoundingMode.HALF_UP);
         }
         
         // Post room charge transaction
         PostTransaction roomChargeTransaction = new PostTransaction();
         roomChargeTransaction.setTransactionId(numberGenerationService.generateTransactionId());
+        roomChargeTransaction.setVoucherNo(numberGenerationService.generateTransactionVoucherNumber());
         roomChargeTransaction.setFolioNo(checkIn.getFolioNo());
         roomChargeTransaction.setRoomId(checkIn.getRoomId());
         roomChargeTransaction.setGuestName(checkIn.getGuestName());
-        roomChargeTransaction.setDate(auditDate);
-        roomChargeTransaction.setAuditDate(auditDate);
+        roomChargeTransaction.setDate(auditDate); // Use audit date as voucher date
+        roomChargeTransaction.setAuditDate(auditDate); // Set audit date
         roomChargeTransaction.setAccHeadId("ROOM_CHARGES");
         roomChargeTransaction.setAmount(baseRoomRate);
         roomChargeTransaction.setNarration("Room charges for " + auditDate + " (Audit date change)");
@@ -383,11 +401,12 @@ public class OperationsService {
         if (cgstAmount.compareTo(BigDecimal.ZERO) > 0) {
             PostTransaction cgstTransaction = new PostTransaction();
             cgstTransaction.setTransactionId(numberGenerationService.generateTransactionId());
+            cgstTransaction.setVoucherNo(numberGenerationService.generateTransactionVoucherNumber());
             cgstTransaction.setFolioNo(checkIn.getFolioNo());
             cgstTransaction.setRoomId(checkIn.getRoomId());
             cgstTransaction.setGuestName(checkIn.getGuestName());
-            cgstTransaction.setDate(auditDate);
-            cgstTransaction.setAuditDate(auditDate);
+            cgstTransaction.setDate(auditDate); // Use audit date as voucher date
+            cgstTransaction.setAuditDate(auditDate); // Set audit date
             cgstTransaction.setAccHeadId("CGST");
             cgstTransaction.setAmount(cgstAmount);
             cgstTransaction.setNarration("CGST for " + auditDate + " (Audit date change)");
@@ -399,11 +418,12 @@ public class OperationsService {
         if (sgstAmount.compareTo(BigDecimal.ZERO) > 0) {
             PostTransaction sgstTransaction = new PostTransaction();
             sgstTransaction.setTransactionId(numberGenerationService.generateTransactionId());
+            sgstTransaction.setVoucherNo(numberGenerationService.generateTransactionVoucherNumber());
             sgstTransaction.setFolioNo(checkIn.getFolioNo());
             sgstTransaction.setRoomId(checkIn.getRoomId());
             sgstTransaction.setGuestName(checkIn.getGuestName());
-            sgstTransaction.setDate(auditDate);
-            sgstTransaction.setAuditDate(auditDate);
+            sgstTransaction.setDate(auditDate); // Use audit date as voucher date
+            sgstTransaction.setAuditDate(auditDate); // Set audit date
             sgstTransaction.setAccHeadId("SGST");
             sgstTransaction.setAmount(sgstAmount);
             sgstTransaction.setNarration("SGST for " + auditDate + " (Audit date change)");
@@ -448,6 +468,18 @@ public class OperationsService {
         Hmsystem hmsystem = latestHmsystemOpt.get();
         LocalDate currentAuditDate = hmsystem.getShiftDate();
         LocalDate newAuditDate = currentAuditDate.plusDays(1);
+        
+        // Check for guests whose departure date is today and have not checked out
+        List<CheckIn> todayDepartures = checkInRepository.findExpectedCheckouts(currentAuditDate);
+        for (CheckIn checkIn : todayDepartures) {
+            if (checkIn.getCheckout() == null || !checkIn.getCheckout()) {
+                // Guest has not checked out, extend departure date by one day
+                checkIn.setDepartureDate(checkIn.getDepartureDate().plusDays(1));
+                checkInRepository.save(checkIn);
+                System.out.println("Extended departure date for guest " + checkIn.getGuestName() + 
+                                 " (Folio: " + checkIn.getFolioNo() + ") to " + checkIn.getDepartureDate());
+            }
+        }
         
         // Update the HMS system record with the new audit date
         Hmsystem newHmsystem = new Hmsystem();

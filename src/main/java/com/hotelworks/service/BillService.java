@@ -138,9 +138,10 @@ public class BillService {
             }
         }
         
-        // Update check-in checkout status to true when bill is generated
-        checkIn.setCheckout(true);
-        checkInRepository.save(checkIn);
+        // Note: Not automatically checking out guests even when bill is generated
+        // Guest checkout status should be manually updated by staff
+        // checkIn.setCheckout(true);
+        // checkInRepository.save(checkIn);
         
         // Send email confirmation if email is provided
         if (checkIn.getEmailId() != null && !checkIn.getEmailId().isEmpty()) {

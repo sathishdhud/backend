@@ -142,7 +142,7 @@ public class AuditDateFunctionalityTest {
     @Test
     public void testFindInHouseGuests() {
         LocalDate today = LocalDate.now();
-        List<CheckIn> inHouseGuests = checkInRepository.findInHouseGuests(today);
+        List<CheckIn> inHouseGuests = checkInRepository.findInHouseGuests();
         
         assertEquals(1, inHouseGuests.size());
         assertEquals("FOLIO001", inHouseGuests.get(0).getFolioNo());

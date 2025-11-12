@@ -126,7 +126,7 @@ public class RoomStatusScheduler {
             LocalDate auditDate = LocalDate.now();
             
             // Find all in-house guests
-            List<CheckIn> inHouseGuests = checkInRepository.findInHouseGuests(auditDate);
+            List<CheckIn> inHouseGuests = checkInRepository.findInHouseGuests();
             
             System.out.println("Found " + inHouseGuests.size() + " in-house guests for audit date: " + auditDate);
             
@@ -199,33 +199,38 @@ public class RoomStatusScheduler {
                         BigDecimal divisor = BigDecimal.valueOf(1.10);
                         baseRoomRate = roomRate.divide(divisor, 2, RoundingMode.HALF_UP);
                         
-                        // Calculate tax amounts (5% each)
+                        // Round base room rate to 0 decimal places
+                        baseRoomRate = baseRoomRate.setScale(0, RoundingMode.HALF_UP);
+                        
+                        // Calculate tax amounts (5% each) on the base room rate
                         cgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
                         sgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
                         
-                        // Adjust for rounding differences
-                        BigDecimal totalTaxes = cgstAmount.add(sgstAmount);
-                        BigDecimal rateDifference = roomRate.subtract(baseRoomRate.add(totalTaxes));
-                        if (rateDifference.compareTo(BigDecimal.ZERO) != 0) {
-                            // Add difference to base rate to maintain total amount
-                            baseRoomRate = baseRoomRate.add(rateDifference);
+                        // Adjust for rounding differences to ensure total equals room rate
+                        BigDecimal totalCalculated = baseRoomRate.add(cgstAmount).add(sgstAmount);
+                        BigDecimal difference = roomRate.subtract(totalCalculated);
+                        if (difference.compareTo(BigDecimal.ZERO) != 0) {
+                            // Add the difference to base room rate to maintain total
+                            baseRoomRate = baseRoomRate.add(difference);
                         }
                     } else {
                         // Rate does not include GST
                         baseRoomRate = roomRate;
-                        // Calculate tax amounts (5% each)
-                        cgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
-                        sgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
+                        // Calculate tax amounts (5% each) on the base room rate
+                        // Each tax is 2.5% of the base room rate (total 5% GST)
+                        cgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.025)).setScale(0, RoundingMode.HALF_UP);
+                        sgstAmount = baseRoomRate.multiply(BigDecimal.valueOf(0.025)).setScale(0, RoundingMode.HALF_UP);
                     }
                     
                     // Post room charge transaction
                     PostTransaction roomChargeTransaction = new PostTransaction();
                     roomChargeTransaction.setTransactionId(numberGenerationService.generateTransactionId());
+                    roomChargeTransaction.setVoucherNo(numberGenerationService.generateTransactionVoucherNumber());
                     roomChargeTransaction.setFolioNo(checkIn.getFolioNo());
                     roomChargeTransaction.setRoomId(checkIn.getRoomId());
                     roomChargeTransaction.setGuestName(checkIn.getGuestName());
-                    roomChargeTransaction.setDate(auditDate);
-                    roomChargeTransaction.setAuditDate(auditDate);
+                    roomChargeTransaction.setDate(auditDate); // Use audit date as voucher date
+                    roomChargeTransaction.setAuditDate(auditDate); // Set audit date
                     roomChargeTransaction.setAmount(baseRoomRate);
                     roomChargeTransaction.setNarration("Daily room charge for " + auditDate);
                     
@@ -243,11 +248,12 @@ public class RoomStatusScheduler {
                     if (cgstAmount.compareTo(BigDecimal.ZERO) > 0) {
                         PostTransaction cgstTransaction = new PostTransaction();
                         cgstTransaction.setTransactionId(numberGenerationService.generateTransactionId());
+                        cgstTransaction.setVoucherNo(numberGenerationService.generateTransactionVoucherNumber());
                         cgstTransaction.setFolioNo(checkIn.getFolioNo());
                         cgstTransaction.setRoomId(checkIn.getRoomId());
                         cgstTransaction.setGuestName(checkIn.getGuestName());
-                        cgstTransaction.setDate(auditDate);
-                        cgstTransaction.setAuditDate(auditDate);
+                        cgstTransaction.setDate(auditDate); // Use audit date as voucher date
+                        cgstTransaction.setAuditDate(auditDate); // Set audit date
                         cgstTransaction.setAmount(cgstAmount);
                         cgstTransaction.setNarration("CGST on room charge for " + auditDate);
                         
@@ -266,11 +272,12 @@ public class RoomStatusScheduler {
                     if (sgstAmount.compareTo(BigDecimal.ZERO) > 0) {
                         PostTransaction sgstTransaction = new PostTransaction();
                         sgstTransaction.setTransactionId(numberGenerationService.generateTransactionId());
+                        sgstTransaction.setVoucherNo(numberGenerationService.generateTransactionVoucherNumber());
                         sgstTransaction.setFolioNo(checkIn.getFolioNo());
                         sgstTransaction.setRoomId(checkIn.getRoomId());
                         sgstTransaction.setGuestName(checkIn.getGuestName());
-                        sgstTransaction.setDate(auditDate);
-                        sgstTransaction.setAuditDate(auditDate);
+                        sgstTransaction.setDate(auditDate); // Use audit date as voucher date
+                        sgstTransaction.setAuditDate(auditDate); // Set audit date
                         sgstTransaction.setAmount(sgstAmount);
                         sgstTransaction.setNarration("SGST on room charge for " + auditDate);
                         

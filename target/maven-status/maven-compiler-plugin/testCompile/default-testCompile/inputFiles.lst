@@ -4,6 +4,7 @@ D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\controller\Sales
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\controller\TransactionControllerTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\PostTransactionGstHandlingTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\controller\CheckInGuestNameUpdateTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\GstCalculationTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\scheduler\AuditDateFunctionalityTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\entity\FoBillTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\controller\ExpenseControllerTest.java
@@ -14,6 +15,7 @@ D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\ExpenseS
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\entity\FoBillAdvanceTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\BillRoomChargesTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\TransactionServiceTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\CheckInServiceTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\ReservationSourceMappingTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\controller\ExpenseControllerIntegrationTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\EmailServiceIntegrationTest.java
@@ -23,10 +25,16 @@ D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\CheckInO
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\ReservationServiceEmailTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\scheduler\AuditDateSchedulerTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\ExpenseServiceFieldsTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\VoucherNumberGenerationTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\scheduler\GstHandlingTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\entity\FoBillBalanceTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\AuditDateFunctionalityTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\ExpenseServiceTransactionTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\CheckoutFunctionalityTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\ReservationGstHandlingTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\ExpenseServiceVoucherNumberTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\EmailServiceReservationTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\RefundVoucherNumberTest.java
+D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\VoucherGenerationTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\entity\FoBillTransactionTest.java
 D:\ashward\hotelmanager\hotelworks\src\test\java\com\hotelworks\service\ReservationSourceFieldTest.java

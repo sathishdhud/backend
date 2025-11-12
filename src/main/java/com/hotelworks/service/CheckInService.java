@@ -17,6 +17,7 @@ import com.hotelworks.repository.NationalityRepository;
 import com.hotelworks.repository.RefModeRepository;
 import com.hotelworks.repository.ResvSourceRepository;
 import com.hotelworks.entity.Reservation;
+import com.hotelworks.repository.HmsystemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -67,6 +69,9 @@ public class CheckInService {
     private ResvSourceRepository resvSourceRepository;
     
     @Autowired
+    private HmsystemRepository hmsystemRepository;
+    
+    @Autowired
     private ReservationService reservationService;
     
     @Autowired
@@ -77,6 +82,19 @@ public class CheckInService {
     
     @Autowired
     private EmailService emailService;
+    
+    /**
+     * Get the current audit date from the HMS system
+     */
+    private LocalDate getCurrentAuditDate() {
+        Optional<com.hotelworks.entity.Hmsystem> latestHmsystemOpt = hmsystemRepository.findLatestRecord();
+        if (latestHmsystemOpt.isPresent()) {
+            return latestHmsystemOpt.get().getShiftDate();
+        } else {
+            // Fallback to current system date if no HMS record exists
+            return LocalDate.now();
+        }
+    }
     
     /**
      * Process check-in for a guest
@@ -98,7 +116,7 @@ public class CheckInService {
         checkIn.setEmailId(request.getEmailId());
         checkIn.setRate(request.getRate());
         checkIn.setRemarks(request.getRemarks());
-        checkIn.setAuditDate(LocalDate.now());
+        checkIn.setAuditDate(getCurrentAuditDate()); // Use audit date from HMS system
         checkIn.setWalkIn(request.getWalkIn());
         
         // Set GST field (newly added)
@@ -222,8 +240,7 @@ public class CheckInService {
      * Get in-house guests
      */
     public List<CheckInResponse> getInHouseGuests() {
-        LocalDate currentDate = LocalDate.now();
-        List<CheckIn> checkIns = checkInRepository.findInHouseGuests(currentDate);
+        List<CheckIn> checkIns = checkInRepository.findInHouseGuests();
         return checkIns.stream()
             .map(this::mapToCheckInResponse)
             .collect(Collectors.toList());
@@ -344,6 +361,21 @@ public class CheckInService {
         return mapToCheckInResponse(savedCheckIn);
     }
     
+    /**
+     * Update check-in status using only folio number
+     */
+    public CheckInResponse updateCheckInStatus(String folioNo) {
+        CheckIn checkIn = checkInRepository.findById(folioNo)
+            .orElseThrow(() -> new RuntimeException("Check-in not found: " + folioNo));
+        
+        // Create a minimal request with no changes
+        CheckInRequest request = new CheckInRequest();
+        // We don't need to set any fields since we're just updating the status
+        
+        CheckIn savedCheckIn = checkInRepository.save(checkIn);
+        return mapToCheckInResponse(savedCheckIn);
+    }
+    
     private void validateCheckInRequest(CheckInRequest request) {
         // Check if room exists and is available
         Room room = roomRepository.findById(request.getRoomId())
@@ -378,7 +410,7 @@ public class CheckInService {
         }
         
         // Validate arrival date is not in the past
-        if (request.getArrivalDate().isBefore(LocalDate.now())) {
+        if (request.getArrivalDate().isBefore(getCurrentAuditDate())) {
             throw new RuntimeException("Arrival date cannot be in the past");
         }
         
